@@ -12,7 +12,7 @@ import { AiAssistantView } from './components/AiAssistantView';
 import { AddItemModal, AddGourmetModal, AddShoppingModal, ExchangeModal } from './components/Modals';
 import { motion, AnimatePresence } from 'motion/react';
 
-const LOCAL_STORAGE_KEY = 'piske_usagi_japan_travel_data_v1';
+const LOCAL_STORAGE_KEY = 'sendai_japan_travel_data_v2';
 
 export default function App() {
   const [data, setData] = useState<TravelAppData>(() => {
@@ -105,18 +105,18 @@ export default function App() {
     const newDay = {
       id: newDayId,
       dayNumber: nextDayNum,
-      date: `2026-10-${14 + nextDayNum}`,
-      title: `Day ${nextDayNum}: 日本自由行探索`,
-      cityRegion: '東京 Tokyo',
+      date: `2026-10-${(7 + nextDayNum).toString().padStart(2, '0')}`,
+      title: `Day ${nextDayNum}`,
+      cityRegion: '仙台 Sendai',
       weather: {
         dayId: newDayId,
-        city: '東京 Tokyo',
+        city: '仙台 Sendai',
         condition: 'sunny' as const,
-        tempHigh: 22,
-        tempLow: 14,
+        tempHigh: 20,
+        tempLow: 12,
         rainProb: 10,
-        clothesTip: '氣候宜人，準備舒適步行的輕便鞋與薄外套。',
-        usagiNote: '兔兔提醒：出發前別忘了確認相機與行動電源補滿電力喔！',
+        clothesTip: '秋季氣候涼爽，請準備隨身外套。',
+        usagiNote: '',
       },
       items: [],
     };

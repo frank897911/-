@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { ShoppingItem } from '../types';
-import { UsagiAvatar, PiskeAvatar, StampSticker } from './UsagiPiskeAvatars';
-import { ShoppingBag, CheckCircle2, Circle, Plus, Calculator, Tag, Sparkles, Trash2, ArrowRightLeft } from 'lucide-react';
+import { ShoppingBag, CheckCircle2, Circle, Plus, Calculator, Trash2, ArrowRightLeft } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { motion, AnimatePresence } from 'motion/react';
 
@@ -32,7 +31,7 @@ export const ShoppingView: React.FC<ShoppingViewProps> = ({
         particleCount: 40,
         spread: 60,
         origin: { y: 0.8 },
-        colors: ['#FF8FAB', '#FFE58F', '#B2EBF2'],
+        colors: ['#8C827A', '#4A4A4A', '#D45068'],
       });
     }
   };
@@ -54,25 +53,25 @@ export const ShoppingView: React.FC<ShoppingViewProps> = ({
   return (
     <div className="space-y-4 pb-20">
       {/* Header Banner */}
-      <div className="bg-white p-4 rounded-2xl border border-[#F1E9DB] flex items-center justify-between">
+      <div className="bg-white p-4 rounded-xl border border-[#F1E9DB] flex items-center justify-between">
         <div>
           <h2 className="text-base font-bold text-[#4A4A4A] flex items-center gap-1.5">
-            <span>日本必買購物清單</span>
-            <span className="text-xs bg-[#E2D4F0]/30 text-[#7B42A6] px-2.5 py-0.5 rounded-full font-semibold">
+            <ShoppingBag className="w-4 h-4 text-[#7B42A6]" />
+            <span>購物清單與匯率試算</span>
+            <span className="text-xs bg-[#E2D4F0]/30 text-[#7B42A6] px-2 py-0.5 rounded-md font-medium">
               免稅 10% 試算
             </span>
           </h2>
           <p className="text-xs text-[#8C827A] mt-0.5">
-            藥妝、家電折價券、伴手禮！自動計算匯率與免稅省下的金額 🛍️
+            藥妝、伴手禮與電器採購，自動換算台幣金額
           </p>
         </div>
-        <PiskeAvatar size={42} mood="excited" />
       </div>
 
       {/* Summary Box & Instant Calculator */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         {/* Total Cost Stats */}
-        <div className="bg-white p-3.5 rounded-2xl border border-[#F1E9DB] shadow-2xs space-y-2">
+        <div className="bg-white p-3.5 rounded-xl border border-[#F1E9DB] space-y-2">
           <div className="flex items-center justify-between text-xs font-semibold text-[#4A4A4A]">
             <span>預計總金額 (JPY / TWD)</span>
             <span className="text-[#D45068]">約 NT$ {Math.round(totalJpy * exchangeRate).toLocaleString()}</span>
@@ -82,9 +81,11 @@ export const ShoppingView: React.FC<ShoppingViewProps> = ({
             <p className="text-xl font-bold text-[#D45068]">
               ¥ {totalJpy.toLocaleString()}
             </p>
-            <span className="text-xs text-emerald-700 font-medium bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
-              免稅省下約 ¥{taxSavedJpy.toLocaleString()} (NT${Math.round(taxSavedJpy * exchangeRate)})
-            </span>
+            {taxSavedJpy > 0 && (
+              <span className="text-xs text-emerald-700 font-medium bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200">
+                免稅省下約 ¥{taxSavedJpy.toLocaleString()} (NT${Math.round(taxSavedJpy * exchangeRate)})
+              </span>
+            )}
           </div>
 
           {/* Progress Bar */}
@@ -100,7 +101,7 @@ export const ShoppingView: React.FC<ShoppingViewProps> = ({
         </div>
 
         {/* Quick JPY -> TWD Converter */}
-        <div className="bg-white p-3.5 rounded-2xl border border-[#F1E9DB] shadow-2xs space-y-2">
+        <div className="bg-white p-3.5 rounded-xl border border-[#F1E9DB] space-y-2">
           <div className="flex items-center justify-between text-xs font-semibold text-[#9E6B00]">
             <span className="flex items-center gap-1">
               <Calculator className="w-3.5 h-3.5" />
@@ -114,14 +115,14 @@ export const ShoppingView: React.FC<ShoppingViewProps> = ({
                 type="number"
                 value={quickJpy}
                 onChange={(e) => setQuickJpy(Number(e.target.value))}
-                className="w-full pl-6 pr-2 py-1 bg-[#FFF9F2] border border-[#F1E9DB] rounded-xl text-xs font-mono font-semibold text-[#4A4A4A] outline-none"
+                className="w-full pl-6 pr-2 py-1 bg-[#FFF9F2] border border-[#F1E9DB] rounded-lg text-xs font-mono font-semibold text-[#4A4A4A] outline-none"
               />
               <span className="absolute left-2 top-1/2 -translate-y-1/2 text-xs font-bold text-[#9E6B00]">¥</span>
             </div>
             
             <ArrowRightLeft className="w-4 h-4 text-[#D49E24] flex-shrink-0" />
 
-            <div className="bg-[#FFF9F2] px-3 py-1 rounded-xl border border-[#F1E9DB] text-xs font-bold text-[#D45068] whitespace-nowrap">
+            <div className="bg-[#FFF9F2] px-3 py-1 rounded-lg border border-[#F1E9DB] text-xs font-bold text-[#D45068] whitespace-nowrap">
               NT$ {Math.round(quickJpy * exchangeRate).toLocaleString()}
             </div>
           </div>
@@ -131,7 +132,7 @@ export const ShoppingView: React.FC<ShoppingViewProps> = ({
               <button
                 key={amt}
                 onClick={() => setQuickJpy(amt)}
-                className="px-2 py-0.5 bg-white hover:bg-[#FFF9F2] border border-[#F1E9DB] rounded-lg text-[#9E6B00] font-medium"
+                className="px-2 py-0.5 bg-white hover:bg-[#FFF9F2] border border-[#F1E9DB] rounded-md text-[#9E6B00] font-medium"
               >
                 ¥{amt / 1000}k
               </button>
@@ -144,20 +145,20 @@ export const ShoppingView: React.FC<ShoppingViewProps> = ({
       <div className="flex items-center gap-1.5 overflow-x-auto scrollbar-none py-1">
         <button
           onClick={() => setSelectedCategory('all')}
-          className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all border ${
+          className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all border ${
             selectedCategory === 'all'
               ? 'bg-[#4A4A4A] text-white border-[#4A4A4A]'
               : 'bg-white text-[#5C554E] border-[#F1E9DB] hover:bg-[#FFF9F2]'
           }`}
         >
-          全部品項 ({shoppingList.length})
+          全部 ({shoppingList.length})
         </button>
 
         {categories.map((cat) => (
           <button
             key={cat}
             onClick={() => setSelectedCategory(cat)}
-            className={`px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-all border ${
+            className={`px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition-all border ${
               selectedCategory === cat
                 ? 'bg-[#4A4A4A] text-white border-[#4A4A4A]'
                 : 'bg-white text-[#5C554E] border-[#F1E9DB] hover:bg-[#FFF9F2]'
@@ -169,7 +170,7 @@ export const ShoppingView: React.FC<ShoppingViewProps> = ({
 
         <button
           onClick={onOpenAddModal}
-          className="ml-auto flex-shrink-0 flex items-center gap-1 px-3.5 py-1.5 bg-[#4A4A4A] hover:bg-[#333333] text-white rounded-full text-xs font-semibold shadow-xs"
+          className="ml-auto flex-shrink-0 flex items-center gap-1 px-3 py-1.5 bg-[#4A4A4A] hover:bg-[#333333] text-white rounded-lg text-xs font-medium shadow-xs"
         >
           <Plus className="w-3.5 h-3.5" />
           <span>新增商品</span>
@@ -183,11 +184,22 @@ export const ShoppingView: React.FC<ShoppingViewProps> = ({
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              className="text-center py-10 bg-white rounded-2xl border border-dashed border-[#F1E9DB] p-6"
+              className="text-center py-12 bg-white rounded-xl border border-dashed border-[#F1E9DB] p-6 flex flex-col items-center justify-center space-y-3"
             >
-              <ShoppingBag className="w-8 h-8 text-[#8C827A] mx-auto opacity-50" />
-              <p className="text-sm font-bold text-[#4A4A4A] mt-2">購物清單是空的喔！</p>
-              <p className="text-xs text-[#8C827A] mt-1">點擊上方「新增商品」新增藥妝或日系紀念品吧 🛍️</p>
+              <div className="w-10 h-10 rounded-full bg-[#FFF9F2] border border-[#F1E9DB] flex items-center justify-center text-[#8C827A]">
+                <ShoppingBag className="w-5 h-5 text-[#8C827A]" />
+              </div>
+              <div>
+                <p className="text-sm font-medium text-[#4A4A4A]">購物清單為空</p>
+                <p className="text-xs text-[#8C827A] mt-1">點擊下方按鈕新增藥妝或伴手禮項目</p>
+              </div>
+              <button
+                onClick={onOpenAddModal}
+                className="mt-2 inline-flex items-center gap-1 px-4 py-2 bg-[#4A4A4A] hover:bg-[#333333] text-white text-xs rounded-lg font-medium transition-all"
+              >
+                <Plus className="w-3.5 h-3.5" />
+                <span>新增購物項目</span>
+              </button>
             </motion.div>
           ) : (
             filteredList.map((item) => (
@@ -197,7 +209,7 @@ export const ShoppingView: React.FC<ShoppingViewProps> = ({
                 initial={{ opacity: 0, y: 8 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, scale: 0.95 }}
-                className={`p-3.5 rounded-2xl border transition-all bg-white border-[#F1E9DB] shadow-2xs hover:shadow-sm flex items-start justify-between gap-3 ${
+                className={`p-3.5 rounded-xl border transition-all bg-white border-[#F1E9DB] flex items-start justify-between gap-3 ${
                   item.isBought ? 'opacity-60 bg-stone-50/60' : ''
                 }`}
               >
@@ -224,7 +236,11 @@ export const ShoppingView: React.FC<ShoppingViewProps> = ({
                           🏪 {item.preferredStore}
                         </span>
                       )}
-                      {item.isTaxFree && <StampSticker type="must_buy" text="免稅10%" />}
+                      {item.isTaxFree && (
+                        <span className="text-[10px] font-semibold text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200">
+                          免稅10%
+                        </span>
+                      )}
                     </div>
 
                     <h3 className={`text-sm font-bold text-[#4A4A4A] mt-1 ${item.isBought ? 'line-through text-stone-400' : ''}`}>
@@ -235,7 +251,7 @@ export const ShoppingView: React.FC<ShoppingViewProps> = ({
                     )}
 
                     {item.notes && (
-                      <p className="text-xs text-[#78716C] mt-1 italic">💡 {item.notes}</p>
+                      <p className="text-xs text-[#78716C] mt-1">{item.notes}</p>
                     )}
                   </div>
                 </div>

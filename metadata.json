@@ -1,6 +1,6 @@
 {
-  "name": "Piske & Usagi 日本隨行旅圖",
-  "description": "日式極簡與 Kanahei 兔兔&P助風格的日本旅遊隨行 App，具備每日行程導航、即時天氣、美食購物清單、航班住宿及記帳預算工具。",
+  "name": "仙台之旅 10/8~10/13",
+  "description": "日式極簡 仙台 6日自由行隨行 App（10/8~10/13），支援自訂每日行程、即時天氣、美食購物清單與隨行記帳。",
   "requestFramePermissions": [],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }
