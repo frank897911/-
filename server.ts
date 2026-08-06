@@ -26,7 +26,14 @@ async function startServer() {
         });
       }
 
-      const ai = new GoogleGenAI({ apiKey });
+      const ai = new GoogleGenAI({
+        apiKey,
+        httpOptions: {
+          headers: {
+            'User-Agent': 'aistudio-build',
+          },
+        },
+      });
       
       let systemInstruction = `你是一個專業、親切且非常可愛的日本旅遊隨行小幫手，名字叫「兔兔與P助旅遊小助手」。
 使用繁體中文回答，語氣溫馨可愛、條理清晰。
@@ -43,7 +50,7 @@ async function startServer() {
       }
 
       const response = await ai.models.generateContent({
-        model: "gemini-2.5-flash",
+        model: "gemini-3.6-flash",
         contents: prompt,
         config: {
           systemInstruction,
