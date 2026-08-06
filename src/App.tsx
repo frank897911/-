@@ -1,18 +1,19 @@
 import React, { useState, useEffect } from 'react';
-import { ActiveTab, TravelAppData, ItineraryItem, GourmetItem, ShoppingItem, ExpenseItem } from './types';
+import { ActiveTab, TravelAppData, ItineraryItem, GourmetItem, ShoppingItem, ExpenseItem, ItineraryDay, JournalEntry, ChecklistItem, GroupMember, FlightDetail, HotelDetail, BookingVoucher } from './types';
 import { initialTravelData, emergencyContactsList } from './data/initialData';
 import { Navbar } from './components/Navbar';
 import { BottomNav } from './components/BottomNav';
 import { DailyItineraryView } from './components/DailyItineraryView';
-import { WeatherView } from './components/WeatherView';
-import { GourmetView } from './components/GourmetView';
-import { ShoppingView } from './components/ShoppingView';
-import { ToolsInfoView } from './components/ToolsInfoView';
+import { BookingsView } from './components/BookingsView';
+import { ExpenseView } from './components/ExpenseView';
+import { JournalView } from './components/JournalView';
+import { PlanningView } from './components/PlanningView';
+import { MembersView } from './components/MembersView';
 import { AiAssistantView } from './components/AiAssistantView';
-import { AddItemModal, AddGourmetModal, AddShoppingModal, ExchangeModal } from './components/Modals';
+import { AddItemModal, AddGourmetModal, AddShoppingModal, ExchangeModal, EditTripModal, EditDayModal } from './components/Modals';
 import { motion, AnimatePresence } from 'motion/react';
 
-const LOCAL_STORAGE_KEY = 'sendai_japan_travel_data_v2';
+const LOCAL_STORAGE_KEY = 'sendai_japan_travel_data_v3';
 
 export default function App() {
   const [data, setData] = useState<TravelAppData>(() => {
@@ -36,14 +37,57 @@ export default function App() {
   const [editingDayId, setEditingDayId] = useState<string>(data.days[0]?.id || 'day-1');
   const [editingItem, setEditingItem] = useState<ItineraryItem | null>(null);
 
-  const [isAddGourmetOpen, setIsAddGourmetOpen] = useState(false);
-  const [isAddShoppingOpen, setIsAddShoppingOpen] = useState(false);
+  const [isEditTripOpen, setIsEditTripOpen] = useState(false);
+  const [editingDay, setEditingDay] = useState<ItineraryDay | null>(null);
+  const [isEditDayOpen, setIsEditDayOpen] = useState(false);
+
   const [isExchangeOpen, setIsExchangeOpen] = useState(false);
 
   // Save to LocalStorage
   useEffect(() => {
     localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(data));
   }, [data]);
+
+  /* Trip & Day Handlers */
+  const handleSaveTripDetails = (title: string, start: string, end: string) => {
+    setData((prev) => ({
+      ...prev,
+      tripTitle: title,
+      startDate: start,
+      endDate: end,
+    }));
+  };
+
+  const handleSaveDayDetails = (dayId: string, updated: Partial<ItineraryDay>) => {
+    setData((prev) => ({
+      ...prev,
+      days: prev.days.map((day) => {
+        if (day.id !== dayId) return day;
+        return {
+          ...day,
+          ...updated,
+          weather: updated.weather ? { ...day.weather, ...updated.weather } : day.weather,
+        };
+      }),
+    }));
+  };
+
+  const handleDeleteDay = (dayId: string) => {
+    setData((prev) => {
+      const remaining = prev.days.filter((d) => d.id !== dayId);
+      const reindexed = remaining.map((d, index) => ({
+        ...d,
+        dayNumber: index + 1,
+      }));
+      return { ...prev, days: reindexed };
+    });
+    if (activeDayId === dayId && data.days.length > 1) {
+      const remaining = data.days.filter((d) => d.id !== dayId);
+      if (remaining.length > 0) {
+        setActiveDayId(remaining[0].id);
+      }
+    }
+  };
 
   /* Itinerary Handlers */
   const handleToggleItineraryComplete = (dayId: string, itemId: string) => {
@@ -102,7 +146,7 @@ export default function App() {
   const handleAddDay = () => {
     const nextDayNum = data.days.length + 1;
     const newDayId = `day-${Date.now()}`;
-    const newDay = {
+    const newDay: ItineraryDay = {
       id: newDayId,
       dayNumber: nextDayNum,
       date: `2026-10-${(7 + nextDayNum).toString().padStart(2, '0')}`,
@@ -129,58 +173,6 @@ export default function App() {
     setActiveDayId(newDayId);
   };
 
-  /* Gourmet Handlers */
-  const handleToggleGourmetVisited = (id: string) => {
-    setData((prev) => ({
-      ...prev,
-      gourmetList: prev.gourmetList.map((g) => (g.id === id ? { ...g, visited: !g.visited } : g)),
-    }));
-  };
-
-  const handleAddGourmet = (gourmetData: Omit<GourmetItem, 'id'>) => {
-    const newItem: GourmetItem = {
-      ...gourmetData,
-      id: `g-${Date.now()}`,
-    };
-    setData((prev) => ({
-      ...prev,
-      gourmetList: [newItem, ...prev.gourmetList],
-    }));
-  };
-
-  const handleDeleteGourmet = (id: string) => {
-    setData((prev) => ({
-      ...prev,
-      gourmetList: prev.gourmetList.filter((g) => g.id !== id),
-    }));
-  };
-
-  /* Shopping Handlers */
-  const handleToggleShoppingBought = (id: string) => {
-    setData((prev) => ({
-      ...prev,
-      shoppingList: prev.shoppingList.map((s) => (s.id === id ? { ...s, isBought: !s.isBought } : s)),
-    }));
-  };
-
-  const handleAddShopping = (shoppingData: Omit<ShoppingItem, 'id'>) => {
-    const newItem: ShoppingItem = {
-      ...shoppingData,
-      id: `s-${Date.now()}`,
-    };
-    setData((prev) => ({
-      ...prev,
-      shoppingList: [newItem, ...prev.shoppingList],
-    }));
-  };
-
-  const handleDeleteShopping = (id: string) => {
-    setData((prev) => ({
-      ...prev,
-      shoppingList: prev.shoppingList.filter((s) => s.id !== id),
-    }));
-  };
-
   /* Expense Handlers */
   const handleAddExpense = (expenseData: Omit<ExpenseItem, 'id'>) => {
     const newItem: ExpenseItem = {
@@ -200,13 +192,158 @@ export default function App() {
     }));
   };
 
+  /* Journal Handlers */
+  const handleAddJournal = (journalData: Omit<JournalEntry, 'id' | 'likesCount'>) => {
+    const newEntry: JournalEntry = {
+      ...journalData,
+      id: `j-${Date.now()}`,
+      likesCount: 1,
+    };
+    setData((prev) => ({
+      ...prev,
+      journals: [newEntry, ...prev.journals],
+    }));
+  };
+
+  const handleDeleteJournal = (id: string) => {
+    setData((prev) => ({
+      ...prev,
+      journals: prev.journals.filter((j) => j.id !== id),
+    }));
+  };
+
+  const handleLikeJournal = (id: string) => {
+    setData((prev) => ({
+      ...prev,
+      journals: prev.journals.map((j) => (j.id === id ? { ...j, likesCount: (j.likesCount || 0) + 1 } : j)),
+    }));
+  };
+
+  /* Planning Checklist Handlers */
+  const handleToggleChecklist = (id: string) => {
+    setData((prev) => ({
+      ...prev,
+      checklists: prev.checklists.map((c) => (c.id === id ? { ...c, completed: !c.completed } : c)),
+    }));
+  };
+
+  const handleAddChecklist = (itemData: Omit<ChecklistItem, 'id' | 'completed'>) => {
+    const newItem: ChecklistItem = {
+      ...itemData,
+      id: `chk-${Date.now()}`,
+      completed: false,
+    };
+    setData((prev) => ({
+      ...prev,
+      checklists: [...prev.checklists, newItem],
+    }));
+  };
+
+  const handleDeleteChecklist = (id: string) => {
+    setData((prev) => ({
+      ...prev,
+      checklists: prev.checklists.filter((c) => c.id !== id),
+    }));
+  };
+
+  /* Itinerary Day Title Handler */
+  const handleUpdateDayTitle = (dayId: string, newTitle: string) => {
+    setData((prev) => ({
+      ...prev,
+      days: prev.days.map((d) => (d.id === dayId ? { ...d, title: newTitle } : d)),
+    }));
+  };
+
+  /* Group Members Handlers */
+  const handleAddMember = (memberData: Omit<GroupMember, 'id'>) => {
+    const newMember: GroupMember = {
+      ...memberData,
+      id: `m-${Date.now()}`,
+    };
+    setData((prev) => ({
+      ...prev,
+      members: [...prev.members, newMember],
+    }));
+  };
+
+  const handleEditMember = (id: string, updated: Partial<GroupMember>) => {
+    setData((prev) => ({
+      ...prev,
+      members: prev.members.map((m) => (m.id === id ? { ...m, ...updated } : m)),
+    }));
+  };
+
+  const handleDeleteMember = (id: string) => {
+    setData((prev) => ({
+      ...prev,
+      members: prev.members.filter((m) => m.id !== id),
+    }));
+  };
+
+  /* Booking Handlers */
+  const handleAddFlight = (flightData: Omit<FlightDetail, 'id'>) => {
+    const newFlight: FlightDetail = { ...flightData, id: `f-${Date.now()}` };
+    setData((prev) => ({ ...prev, flights: [...prev.flights, newFlight] }));
+  };
+
+  const handleEditFlight = (id: string, updated: Partial<FlightDetail>) => {
+    setData((prev) => ({
+      ...prev,
+      flights: prev.flights.map((f) => (f.id === id ? { ...f, ...updated } : f)),
+    }));
+  };
+
+  const handleDeleteFlight = (id: string) => {
+    setData((prev) => ({
+      ...prev,
+      flights: prev.flights.filter((f) => f.id !== id),
+    }));
+  };
+
+  const handleAddHotel = (hotelData: Omit<HotelDetail, 'id'>) => {
+    const newHotel: HotelDetail = { ...hotelData, id: `h-${Date.now()}` };
+    setData((prev) => ({ ...prev, hotels: [...prev.hotels, newHotel] }));
+  };
+
+  const handleEditHotel = (id: string, updated: Partial<HotelDetail>) => {
+    setData((prev) => ({
+      ...prev,
+      hotels: prev.hotels.map((h) => (h.id === id ? { ...h, ...updated } : h)),
+    }));
+  };
+
+  const handleDeleteHotel = (id: string) => {
+    setData((prev) => ({
+      ...prev,
+      hotels: prev.hotels.filter((h) => h.id !== id),
+    }));
+  };
+
+  const handleAddVoucher = (voucherData: Omit<BookingVoucher, 'id'>) => {
+    const newVoucher: BookingVoucher = { ...voucherData, id: `v-${Date.now()}` };
+    setData((prev) => ({ ...prev, vouchers: [...prev.vouchers, newVoucher] }));
+  };
+
+  const handleEditVoucher = (id: string, updated: Partial<BookingVoucher>) => {
+    setData((prev) => ({
+      ...prev,
+      vouchers: prev.vouchers.map((v) => (v.id === id ? { ...v, ...updated } : v)),
+    }));
+  };
+
+  const handleDeleteVoucher = (id: string) => {
+    setData((prev) => ({
+      ...prev,
+      vouchers: prev.vouchers.filter((v) => v.id !== id),
+    }));
+  };
+
   return (
-    <div className="min-h-screen bg-[#FDFBF7] text-[#4A4A4A] font-sans antialiased selection:bg-[#F8C3CD]/40">
-      {/* Outer Container Wrapper (Mobile Frame View Simulation Option) */}
+    <div className="min-h-screen bg-[#FDFBF7] text-[#3E3A37] font-sans antialiased selection:bg-[#C5D5B5]/40">
       <div
         className={`mx-auto transition-all duration-300 ${
           isMobileFrameMode
-            ? 'max-w-md min-h-screen bg-[#FDFBF7] border-x border-[#F1E9DB] shadow-sm relative'
+            ? 'max-w-md min-h-screen bg-[#FDFBF7] border-x border-[#EBE3D5] shadow-sm relative'
             : 'max-w-4xl min-h-screen bg-[#FDFBF7]'
         }`}
       >
@@ -217,6 +354,7 @@ export default function App() {
           endDate={data.endDate}
           exchangeRate={data.exchangeRateJpyToTwd}
           onOpenExchangeModal={() => setIsExchangeOpen(true)}
+          onOpenEditTripModal={() => setIsEditTripOpen(true)}
           isMobileFrameMode={isMobileFrameMode}
           onToggleFrameMode={() => setIsMobileFrameMode(!isMobileFrameMode)}
           onSelectTab={setActiveTab}
@@ -228,14 +366,17 @@ export default function App() {
             {activeTab === 'itinerary' && (
               <motion.div
                 key="itinerary"
-                initial={{ opacity: 0, x: -10 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: 10 }}
-                transition={{ duration: 0.2 }}
+                initial={{ opacity: 0, y: 6 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -6 }}
+                transition={{ duration: 0.15 }}
               >
                 <DailyItineraryView
                   days={data.days}
                   activeDayId={activeDayId}
+                  startDate={data.startDate}
+                  endDate={data.endDate}
+                  tripTitle={data.tripTitle}
                   onSelectDay={setActiveDayId}
                   onToggleComplete={handleToggleItineraryComplete}
                   onOpenAddItemModal={(dayId) => {
@@ -250,70 +391,48 @@ export default function App() {
                   }}
                   onDeleteItem={handleDeleteItineraryItem}
                   onAddDay={handleAddDay}
+                  onUpdateDayTitle={handleUpdateDayTitle}
                 />
               </motion.div>
             )}
 
-            {activeTab === 'weather' && (
+            {activeTab === 'bookings' && (
               <motion.div
-                key="weather"
-                initial={{ opacity: 0, x: -10 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: 10 }}
-                transition={{ duration: 0.2 }}
+                key="bookings"
+                initial={{ opacity: 0, y: 6 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -6 }}
+                transition={{ duration: 0.15 }}
               >
-                <WeatherView />
-              </motion.div>
-            )}
-
-            {activeTab === 'gourmet' && (
-              <motion.div
-                key="gourmet"
-                initial={{ opacity: 0, x: -10 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: 10 }}
-                transition={{ duration: 0.2 }}
-              >
-                <GourmetView
-                  gourmetList={data.gourmetList}
-                  onToggleVisited={handleToggleGourmetVisited}
-                  onOpenAddModal={() => setIsAddGourmetOpen(true)}
-                  onDeleteGourmet={handleDeleteGourmet}
-                />
-              </motion.div>
-            )}
-
-            {activeTab === 'shopping' && (
-              <motion.div
-                key="shopping"
-                initial={{ opacity: 0, x: -10 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: 10 }}
-                transition={{ duration: 0.2 }}
-              >
-                <ShoppingView
-                  shoppingList={data.shoppingList}
-                  exchangeRate={data.exchangeRateJpyToTwd}
-                  onToggleBought={handleToggleShoppingBought}
-                  onOpenAddModal={() => setIsAddShoppingOpen(true)}
-                  onDeleteItem={handleDeleteShopping}
-                />
-              </motion.div>
-            )}
-
-            {activeTab === 'tools' && (
-              <motion.div
-                key="tools"
-                initial={{ opacity: 0, x: -10 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: 10 }}
-                transition={{ duration: 0.2 }}
-              >
-                <ToolsInfoView
+                <BookingsView
                   flights={data.flights}
                   hotels={data.hotels}
-                  emergencyContacts={emergencyContactsList}
+                  vouchers={data.vouchers}
+                  exchangeRate={data.exchangeRateJpyToTwd}
+                  onDeleteFlight={handleDeleteFlight}
+                  onDeleteHotel={handleDeleteHotel}
+                  onDeleteVoucher={handleDeleteVoucher}
+                  onAddFlight={handleAddFlight}
+                  onEditFlight={handleEditFlight}
+                  onAddHotel={handleAddHotel}
+                  onEditHotel={handleEditHotel}
+                  onAddVoucher={handleAddVoucher}
+                  onEditVoucher={handleEditVoucher}
+                />
+              </motion.div>
+            )}
+
+            {activeTab === 'expense' && (
+              <motion.div
+                key="expense"
+                initial={{ opacity: 0, y: 6 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -6 }}
+                transition={{ duration: 0.15 }}
+              >
+                <ExpenseView
                   expenses={data.expenses}
+                  members={data.members}
                   exchangeRate={data.exchangeRateJpyToTwd}
                   totalBudgetTwd={data.totalBudgetTwd}
                   onAddExpense={handleAddExpense}
@@ -322,13 +441,66 @@ export default function App() {
               </motion.div>
             )}
 
+            {activeTab === 'journal' && (
+              <motion.div
+                key="journal"
+                initial={{ opacity: 0, y: 6 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -6 }}
+                transition={{ duration: 0.15 }}
+              >
+                <JournalView
+                  journals={data.journals}
+                  members={data.members}
+                  onAddJournal={handleAddJournal}
+                  onDeleteJournal={handleDeleteJournal}
+                  onLikeJournal={handleLikeJournal}
+                />
+              </motion.div>
+            )}
+
+            {activeTab === 'planning' && (
+              <motion.div
+                key="planning"
+                initial={{ opacity: 0, y: 6 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -6 }}
+                transition={{ duration: 0.15 }}
+              >
+                <PlanningView
+                  checklists={data.checklists}
+                  members={data.members}
+                  onToggleChecklist={handleToggleChecklist}
+                  onAddChecklist={handleAddChecklist}
+                  onDeleteChecklist={handleDeleteChecklist}
+                />
+              </motion.div>
+            )}
+
+            {activeTab === 'members' && (
+              <motion.div
+                key="members"
+                initial={{ opacity: 0, y: 6 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -6 }}
+                transition={{ duration: 0.15 }}
+              >
+                <MembersView
+                  members={data.members}
+                  onAddMember={handleAddMember}
+                  onEditMember={handleEditMember}
+                  onDeleteMember={handleDeleteMember}
+                />
+              </motion.div>
+            )}
+
             {activeTab === 'ai' && (
               <motion.div
                 key="ai"
-                initial={{ opacity: 0, x: -10 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: 10 }}
-                transition={{ duration: 0.2 }}
+                initial={{ opacity: 0, y: 6 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -6 }}
+                transition={{ duration: 0.15 }}
               >
                 <AiAssistantView />
               </motion.div>
@@ -348,16 +520,24 @@ export default function App() {
           onSave={handleSaveItineraryItem}
         />
 
-        <AddGourmetModal
-          isOpen={isAddGourmetOpen}
-          onClose={() => setIsAddGourmetOpen(false)}
-          onAdd={handleAddGourmet}
+        <EditTripModal
+          isOpen={isEditTripOpen}
+          onClose={() => setIsEditTripOpen(false)}
+          tripTitle={data.tripTitle}
+          startDate={data.startDate}
+          endDate={data.endDate}
+          onSave={handleSaveTripDetails}
         />
 
-        <AddShoppingModal
-          isOpen={isAddShoppingOpen}
-          onClose={() => setIsAddShoppingOpen(false)}
-          onAdd={handleAddShopping}
+        <EditDayModal
+          isOpen={isEditDayOpen}
+          onClose={() => {
+            setIsEditDayOpen(false);
+            setEditingDay(null);
+          }}
+          day={editingDay}
+          onSave={handleSaveDayDetails}
+          onDeleteDay={handleDeleteDay}
         />
 
         <ExchangeModal
@@ -377,3 +557,5 @@ export default function App() {
     </div>
   );
 }
+
+

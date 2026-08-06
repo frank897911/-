@@ -1,5 +1,5 @@
 import React from 'react';
-import { MapPin, Calendar, ArrowRightLeft, Smartphone, Monitor } from 'lucide-react';
+import { MapPin, Calendar, ArrowRightLeft, Smartphone, Monitor, Edit3 } from 'lucide-react';
 
 interface NavbarProps {
   tripTitle: string;
@@ -7,6 +7,7 @@ interface NavbarProps {
   endDate: string;
   exchangeRate: number;
   onOpenExchangeModal: () => void;
+  onOpenEditTripModal?: () => void;
   isMobileFrameMode: boolean;
   onToggleFrameMode: () => void;
   onSelectTab: (tab: any) => void;
@@ -18,25 +19,54 @@ export const Navbar: React.FC<NavbarProps> = ({
   endDate,
   exchangeRate,
   onOpenExchangeModal,
+  onOpenEditTripModal,
   isMobileFrameMode,
   onToggleFrameMode,
   onSelectTab,
 }) => {
+  const formatShortDate = (dateStr: string) => {
+    if (!dateStr) return '';
+    const parts = dateStr.split('-');
+    if (parts.length === 3) {
+      return `${parts[1]}/${parts[2]}`;
+    }
+    return dateStr;
+  };
+
   return (
     <header className="sticky top-0 z-30 bg-white/95 backdrop-blur-md border-b border-[#F1E9DB] px-4 py-3 transition-all">
       <div className="max-w-4xl mx-auto flex items-center justify-between gap-2">
         {/* Left: App Logo & Title */}
-        <div className="flex items-center gap-2.5 cursor-pointer" onClick={() => onSelectTab('itinerary')}>
-          <div className="w-8 h-8 rounded-full bg-[#FFF9F2] border border-[#F1E9DB] flex items-center justify-center text-[#4A4A4A]">
+        <div className="flex items-center gap-2.5">
+          <div
+            className="w-8 h-8 rounded-full bg-[#FFF9F2] border border-[#F1E9DB] flex items-center justify-center text-[#4A4A4A] cursor-pointer"
+            onClick={() => onSelectTab('itinerary')}
+          >
             <MapPin className="w-4 h-4 text-[#D45068]" />
           </div>
           <div className="flex flex-col">
-            <h1 className="text-sm sm:text-base font-bold text-[#4A4A4A] leading-tight flex items-center gap-1.5">
-              <span>{tripTitle}</span>
-            </h1>
-            <div className="text-[11px] text-[#8C827A] flex items-center gap-1 font-medium">
+            <div className="flex items-center gap-1.5">
+              <h1
+                className="text-sm sm:text-base font-bold text-[#4A4A4A] leading-tight cursor-pointer"
+                onClick={() => onSelectTab('itinerary')}
+              >
+                {tripTitle}
+              </h1>
+              {onOpenEditTripModal && (
+                <button
+                  onClick={onOpenEditTripModal}
+                  className="p-0.5 text-[#8C827A] hover:text-[#4A4A4A] transition-colors"
+                  title="編輯行程標題與日期"
+                >
+                  <Edit3 className="w-3.5 h-3.5" />
+                </button>
+              )}
+            </div>
+            <div className="text-[11px] text-[#8C827A] flex items-center gap-1 font-medium mt-0.5 font-mono">
               <Calendar className="w-3 h-3 text-[#2B7A82]" />
-              <span>10/08 ～ 10/13</span>
+              <span>
+                {formatShortDate(startDate)} ～ {formatShortDate(endDate)}
+              </span>
             </div>
           </div>
         </div>
@@ -66,3 +96,4 @@ export const Navbar: React.FC<NavbarProps> = ({
     </header>
   );
 };
+

@@ -1,14 +1,16 @@
 import React, { useState } from 'react';
 import { ShoppingItem } from '../types';
-import { ShoppingBag, CheckCircle2, Circle, Plus, Calculator, Trash2, ArrowRightLeft } from 'lucide-react';
+import { ShoppingBag, CheckCircle2, Circle, Plus, Calculator, Trash2, ArrowRightLeft, Image as ImageIcon, Edit2 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { motion, AnimatePresence } from 'motion/react';
+import { ImageLightboxModal } from './Modals';
 
 interface ShoppingViewProps {
   shoppingList: ShoppingItem[];
   exchangeRate: number;
   onToggleBought: (id: string) => void;
   onOpenAddModal: () => void;
+  onOpenEditModal: (item: ShoppingItem) => void;
   onDeleteItem: (id: string) => void;
 }
 
@@ -17,10 +19,12 @@ export const ShoppingView: React.FC<ShoppingViewProps> = ({
   exchangeRate,
   onToggleBought,
   onOpenAddModal,
+  onOpenEditModal,
   onDeleteItem,
 }) => {
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [quickJpy, setQuickJpy] = useState<number>(10000);
+  const [lightboxData, setLightboxData] = useState<{ url: string; title: string } | null>(null);
 
   const categories = ['藥妝', '電器', '伴手禮', '便利商店', '服飾潮牌', '其他'];
 
@@ -52,18 +56,26 @@ export const ShoppingView: React.FC<ShoppingViewProps> = ({
 
   return (
     <div className="space-y-4 pb-20">
+      {/* Lightbox for Shopping Item Photos */}
+      <ImageLightboxModal
+        isOpen={!!lightboxData}
+        onClose={() => setLightboxData(null)}
+        imageUrl={lightboxData?.url || ''}
+        title={lightboxData?.title || ''}
+      />
+
       {/* Header Banner */}
       <div className="bg-white p-4 rounded-xl border border-[#F1E9DB] flex items-center justify-between">
         <div>
           <h2 className="text-base font-bold text-[#4A4A4A] flex items-center gap-1.5">
             <ShoppingBag className="w-4 h-4 text-[#7B42A6]" />
-            <span>購物清單與匯率試算</span>
+            <span>購物清單與圖片貼附</span>
             <span className="text-xs bg-[#E2D4F0]/30 text-[#7B42A6] px-2 py-0.5 rounded-md font-medium">
               免稅 10% 試算
             </span>
           </h2>
           <p className="text-xs text-[#8C827A] mt-0.5">
-            藥妝、伴手禮與電器採購，自動換算台幣金額
+            可為商品上傳照片或貼上網址，日本實體門市採購更清晰
           </p>
         </div>
       </div>
@@ -213,7 +225,7 @@ export const ShoppingView: React.FC<ShoppingViewProps> = ({
                   item.isBought ? 'opacity-60 bg-stone-50/60' : ''
                 }`}
               >
-                {/* Left: Checkbox + Name + Details */}
+                {/* Left: Checkbox + Thumbnail + Name + Details */}
                 <div className="flex items-start gap-2.5 flex-1 min-w-0">
                   <button
                     onClick={() => handleItemToggle(item.id, item.isBought)}
@@ -225,6 +237,25 @@ export const ShoppingView: React.FC<ShoppingViewProps> = ({
                       <Circle className="w-5 h-5 text-stone-300" />
                     )}
                   </button>
+
+                  {/* Thumbnail Image if available */}
+                  {item.imageUrl ? (
+                    <button
+                      type="button"
+                      onClick={() => setLightboxData({ url: item.imageUrl!, title: item.name })}
+                      className="relative group flex-shrink-0"
+                      title="點擊放大查看參考照片"
+                    >
+                      <img
+                        src={item.imageUrl}
+                        alt={item.name}
+                        className="w-14 h-14 object-cover rounded-lg border border-[#F1E9DB] group-hover:scale-105 transition-transform"
+                      />
+                      <span className="absolute bottom-0 right-0 bg-black/60 text-white p-0.5 rounded-tl text-[9px]">
+                        <ImageIcon className="w-2.5 h-2.5" />
+                      </span>
+                    </button>
+                  ) : null}
 
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-1.5 flex-wrap">
@@ -256,7 +287,7 @@ export const ShoppingView: React.FC<ShoppingViewProps> = ({
                   </div>
                 </div>
 
-                {/* Right: Price + Quantity + Delete */}
+                {/* Right: Price + Quantity + Actions */}
                 <div className="flex flex-col items-end flex-shrink-0">
                   <span className="text-sm font-bold text-[#D45068]">
                     ¥{(item.priceJpy * item.quantity).toLocaleString()}
@@ -265,13 +296,22 @@ export const ShoppingView: React.FC<ShoppingViewProps> = ({
                     (約 NT${Math.round(item.priceJpy * item.quantity * exchangeRate)}) ‧ x{item.quantity}
                   </span>
 
-                  <button
-                    onClick={() => onDeleteItem(item.id)}
-                    className="mt-2 p-1 text-[#8C827A] hover:text-rose-500 transition-colors"
-                    title="刪除"
-                  >
-                    <Trash2 className="w-3.5 h-3.5" />
-                  </button>
+                  <div className="flex items-center gap-1 mt-2">
+                    <button
+                      onClick={() => onOpenEditModal(item)}
+                      className="p-1 text-[#8C827A] hover:text-[#4A4A4A] transition-colors"
+                      title="編輯或修改照片"
+                    >
+                      <Edit2 className="w-3.5 h-3.5" />
+                    </button>
+                    <button
+                      onClick={() => onDeleteItem(item.id)}
+                      className="p-1 text-[#8C827A] hover:text-rose-500 transition-colors"
+                      title="刪除"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
                 </div>
               </motion.div>
             ))

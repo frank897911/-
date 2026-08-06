@@ -17,6 +17,7 @@ import {
   Edit2,
   Trash2,
   Train,
+  Footprints,
   Info
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
@@ -24,30 +25,55 @@ import { motion, AnimatePresence } from 'motion/react';
 interface DailyItineraryViewProps {
   days: ItineraryDay[];
   activeDayId: string;
+  startDate: string;
+  endDate: string;
+  tripTitle: string;
   onSelectDay: (dayId: string) => void;
   onToggleComplete: (dayId: string, itemId: string) => void;
   onOpenAddItemModal: (dayId: string) => void;
   onOpenEditItemModal: (dayId: string, item: ItineraryItem) => void;
   onDeleteItem: (dayId: string, itemId: string) => void;
   onAddDay: () => void;
+  onUpdateDayTitle?: (dayId: string, newTitle: string) => void;
 }
 
 export const DailyItineraryView: React.FC<DailyItineraryViewProps> = ({
   days,
   activeDayId,
+  startDate,
+  endDate,
+  tripTitle,
   onSelectDay,
   onToggleComplete,
   onOpenAddItemModal,
   onOpenEditItemModal,
   onDeleteItem,
   onAddDay,
+  onUpdateDayTitle,
 }) => {
   const [selectedCategory, setSelectedCategory] = useState<ItemCategory | 'all'>('all');
   const [copiedMapCodeId, setCopiedMapCodeId] = useState<string | null>(null);
+  const [isEditingTitle, setIsEditingTitle] = useState(false);
+  const [editingTitleValue, setEditingTitleValue] = useState('');
 
   const activeDay = days.find((d) => d.id === activeDayId) || days[0];
 
+  // Calculate days remaining to departure
+  const getDaysRemaining = () => {
+    if (!startDate) return null;
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const start = new Date(startDate);
+    start.setHours(0, 0, 0, 0);
+    const diffTime = start.getTime() - today.getTime();
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    return diffDays;
+  };
+
+  const daysLeft = getDaysRemaining();
+
   if (!activeDay) return null;
+
 
   const filteredItems = activeDay.items.filter((item) => {
     if (selectedCategory === 'all') return true;
@@ -108,10 +134,37 @@ export const DailyItineraryView: React.FC<DailyItineraryViewProps> = ({
     }
   };
 
-  const weather = activeDay.weather;
-
   return (
     <div className="space-y-4 pb-20">
+      {/* Trip Countdown Banner */}
+      <div className="bg-[#FFFDF7] p-3.5 rounded-2xl border border-[#EBE3D5] shadow-[3px_3px_0px_#E2DDD0] flex items-center justify-between">
+        <div className="flex items-center gap-2.5">
+          <div className="w-9 h-9 rounded-xl bg-[#E2EAD8] text-[#3B523A] border border-[#C5D5B5] flex items-center justify-center font-bold text-lg">
+            ✈️
+          </div>
+          <div>
+            <span className="text-xs font-bold text-[#4E7C59] bg-[#E2EAD8] px-2 py-0.5 rounded-md">
+              距離出發倒數
+            </span>
+            <h3 className="text-sm font-bold text-[#3E3A37] mt-0.5">
+              {daysLeft === null ? (
+                '期待即將到來的旅程！'
+              ) : daysLeft > 0 ? (
+                <span>距離出發還有 <strong className="text-[#D45068] text-base font-extrabold">{daysLeft}</strong> 天！</span>
+              ) : daysLeft === 0 ? (
+                <span className="text-[#D45068]">🎉 今天就是出發日！祝旅途愉快！</span>
+              ) : (
+                <span className="text-[#2B7A82]">✨ 旅程進行中 ‧ 享受美好時刻！</span>
+              )}
+            </h3>
+          </div>
+        </div>
+        <div className="text-right text-[11px] font-mono text-[#8C827A]">
+          <div>{startDate}</div>
+          <div>至 {endDate}</div>
+        </div>
+      </div>
+
       {/* Day Tabs Bar */}
       <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none pt-1">
         {days.map((day) => {
@@ -140,37 +193,6 @@ export const DailyItineraryView: React.FC<DailyItineraryViewProps> = ({
           <Plus className="w-4 h-4" />
         </button>
       </div>
-
-      {/* Weather Forecast Banner */}
-      {weather && (
-        <motion.div
-          initial={{ opacity: 0, y: -6 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="bg-white p-3.5 rounded-xl border border-[#F1E9DB]"
-        >
-          <div className="flex items-center justify-between gap-3">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-[#FFF9F2] rounded-lg border border-[#F1E9DB]">
-                <CloudSun className="w-5 h-5 text-[#D49E24]" />
-              </div>
-              <div>
-                <div className="flex items-center gap-2">
-                  <span className="font-bold text-sm text-[#4A4A4A]">{weather.city} 天氣</span>
-                  <span className="text-xs px-2 py-0.5 bg-[#FDE08E]/25 text-[#9E6B00] font-medium rounded-md border border-[#FDE08E]/50">
-                    降雨機率 {weather.rainProb}%
-                  </span>
-                </div>
-                <div className="text-xs text-[#78716C] mt-0.5 flex items-center gap-2">
-                  <span className="font-semibold text-[#D45068]">{weather.tempHigh}°C</span>
-                  <span>/</span>
-                  <span className="font-semibold text-[#2B7A82]">{weather.tempLow}°C</span>
-                  <span>｜ {weather.clothesTip}</span>
-                </div>
-              </div>
-            </div>
-          </div>
-        </motion.div>
-      )}
 
       {/* Category Filter Pills & Add Button */}
       <div className="flex items-center justify-between gap-2">
@@ -207,15 +229,67 @@ export const DailyItineraryView: React.FC<DailyItineraryViewProps> = ({
       </div>
 
       {/* Day Title Summary Header */}
-      <div className="flex items-center justify-between bg-white p-3.5 rounded-xl border border-[#F1E9DB]">
-        <div>
-          <h2 className="text-base font-bold text-[#4A4A4A]">{activeDay.title}</h2>
-          <p className="text-xs text-[#8C827A] mt-0.5">
-            {activeDay.items.length === 0
-              ? '尚未安排行程，可點擊上方「新增行程」加入'
-              : `共 ${activeDay.items.length} 個行程 ‧ 已完成 ${activeDay.items.filter((i) => i.completed).length} 個`}
-          </p>
-        </div>
+      <div className="bg-white p-3.5 rounded-xl border border-[#F1E9DB]">
+        {isEditingTitle ? (
+          <div className="flex items-center gap-2">
+            <input
+              type="text"
+              value={editingTitleValue}
+              onChange={(e) => setEditingTitleValue(e.target.value)}
+              className="flex-1 px-3 py-1.5 border border-[#3B523A] rounded-lg text-sm font-bold text-[#4A4A4A] outline-none"
+              autoFocus
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  if (onUpdateDayTitle && editingTitleValue.trim()) {
+                    onUpdateDayTitle(activeDay.id, editingTitleValue.trim());
+                  }
+                  setIsEditingTitle(false);
+                }
+              }}
+            />
+            <button
+              onClick={() => {
+                if (onUpdateDayTitle && editingTitleValue.trim()) {
+                  onUpdateDayTitle(activeDay.id, editingTitleValue.trim());
+                }
+                setIsEditingTitle(false);
+              }}
+              className="px-3 py-1.5 bg-[#3B523A] hover:bg-[#2C3E2B] text-white text-xs font-bold rounded-lg shadow-xs"
+            >
+              儲存
+            </button>
+            <button
+              onClick={() => setIsEditingTitle(false)}
+              className="px-3 py-1.5 bg-stone-100 text-[#8C827A] text-xs font-bold rounded-lg"
+            >
+              取消
+            </button>
+          </div>
+        ) : (
+          <div className="flex items-center justify-between">
+            <div>
+              <div className="flex items-center gap-2">
+                <h2 className="text-base font-bold text-[#4A4A4A]">{activeDay.title}</h2>
+                <button
+                  onClick={() => {
+                    setEditingTitleValue(activeDay.title);
+                    setIsEditingTitle(true);
+                  }}
+                  className="p-1 text-[#8C827A] hover:text-[#3B523A] transition-colors rounded-md hover:bg-[#FFF9F2] flex items-center gap-1 text-xs"
+                  title="點擊修改每日行程標題"
+                >
+                  <Edit2 className="w-3.5 h-3.5" />
+                  <span className="text-[11px] font-medium text-[#8C827A] underline">修改標題</span>
+                </button>
+              </div>
+              <p className="text-xs text-[#8C827A] mt-0.5">
+                {activeDay.items.length === 0
+                  ? '尚未安排行程，可點擊上方「新增行程」加入'
+                  : `共 ${activeDay.items.length} 個行程 ‧ 已完成 ${activeDay.items.filter((i) => i.completed).length} 個`}
+              </p>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Itinerary Cards List */}
@@ -407,21 +481,32 @@ export const DailyItineraryView: React.FC<DailyItineraryViewProps> = ({
                     )}
 
                     {/* Google Maps Navigation Buttons */}
-                    <div className="flex items-center gap-1.5 ml-auto">
+                    <div className="flex items-center gap-1 ml-auto">
                       <button
                         onClick={() => openGoogleMaps(item.locationName, item.address, 'driving')}
-                        className="flex items-center gap-1 px-3 py-1 bg-[#4A4A4A] hover:bg-[#333333] text-white rounded-lg text-xs font-medium transition-all active:scale-95"
+                        className="flex items-center gap-1 px-2.5 py-1 bg-[#4A4A4A] hover:bg-[#333333] text-white rounded-lg text-xs font-medium transition-all active:scale-95"
+                        title="開啟開車導航"
                       >
                         <Navigation className="w-3.5 h-3.5" />
-                        <span>導航</span>
+                        <span>開車</span>
                       </button>
 
                       <button
                         onClick={() => openGoogleMaps(item.locationName, item.address, 'transit')}
-                        className="p-1.5 bg-white hover:bg-[#FFF9F2] text-[#4A4A4A] border border-[#F1E9DB] rounded-lg text-xs font-medium transition-all"
+                        className="flex items-center gap-1 px-2.5 py-1 bg-white hover:bg-[#FFF9F2] text-[#2B7A82] border border-[#A5DEE4] rounded-lg text-xs font-medium transition-all"
                         title="開啟大眾運輸路線"
                       >
                         <Train className="w-3.5 h-3.5 text-[#2B7A82]" />
+                        <span>搭車</span>
+                      </button>
+
+                      <button
+                        onClick={() => openGoogleMaps(item.locationName, item.address, 'walking')}
+                        className="flex items-center gap-1 px-2.5 py-1 bg-white hover:bg-[#FFF9F2] text-[#D45068] border border-[#F8C3CD] rounded-lg text-xs font-medium transition-all"
+                        title="開啟步行導航"
+                      >
+                        <Footprints className="w-3.5 h-3.5 text-[#D45068]" />
+                        <span>步行</span>
                       </button>
                     </div>
                   </div>

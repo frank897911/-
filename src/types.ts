@@ -84,6 +84,7 @@ export interface ShoppingItem {
   isTaxFree: boolean; // 10% tax free flag
   isBought: boolean;
   notes?: string;
+  imageUrl?: string;
 }
 
 export interface FlightDetail {
@@ -139,15 +140,68 @@ export interface ExpenseItem {
   amountJpy: number;
   amountTwd: number;
   paymentMethod: PaymentMethod;
+  payer?: string; // e.g. "007 (隊長)", "小明"
+  splitType?: 'equal' | 'custom';
+  splitMembers?: string[]; // e.g. ["007", "小明", "小美"]
   notes?: string;
 }
 
-export type ActiveTab = 'itinerary' | 'weather' | 'gourmet' | 'shopping' | 'tools' | 'ai';
+export interface JournalEntry {
+  id: string;
+  date: string;
+  title: string;
+  author: string;
+  authorAvatar?: string;
+  moodEmoji: string; // e.g. "🌸", "🎏", "🍵", "🍣", "🎒"
+  content: string;
+  imageUrls: string[];
+  likesCount: number;
+  location?: string;
+}
+
+export interface ChecklistItem {
+  id: string;
+  type?: 'todo' | 'packing' | 'wishlist' | 'shopping' | 'gourmet';
+  category?: 'todo' | 'packing' | 'shopping' | 'gourmet';
+  title: string;
+  assignedTo?: string;
+  assignee?: string;
+  completed: boolean;
+  priority?: 'high' | 'medium' | 'low';
+  notes?: string;
+  imageUrl?: string;
+  targetStore?: string;
+}
+
+export interface GroupMember {
+  id: string;
+  name: string;
+  role: string; // e.g. "隊長 / 總召", "財務長 / 掌櫃", "攝影師", "司機 / 導航"
+  avatar?: string;
+  avatarUrl?: string;
+  phone?: string;
+  isCurrentUser?: boolean;
+  notes?: string;
+}
+
+export interface BookingVoucher {
+  id: string;
+  title: string;
+  type: 'flight' | 'hotel' | 'ticket' | 'car' | 'other';
+  referenceNo: string;
+  isPinProtected: boolean;
+  imageUrl?: string;
+  fileUrl?: string;
+  notes?: string;
+}
+
+export type ActiveTab = 'itinerary' | 'bookings' | 'expense' | 'journal' | 'planning' | 'members' | 'ai';
 
 export interface TravelAppData {
   tripTitle: string;
   startDate: string;
   endDate: string;
+  pinCode?: string; // e.g. "007"
   exchangeRateJpyToTwd: number; // e.g. 0.215
   totalBudgetTwd: number;
   days: ItineraryDay[];
@@ -156,4 +210,8 @@ export interface TravelAppData {
   flights: FlightDetail[];
   hotels: HotelDetail[];
   expenses: ExpenseItem[];
+  journals: JournalEntry[];
+  checklists: ChecklistItem[];
+  members: GroupMember[];
+  vouchers: BookingVoucher[];
 }
