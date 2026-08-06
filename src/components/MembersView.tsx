@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { GroupMember } from '../types';
-import { Users, Plus, Phone, ShieldAlert, Award, Edit2, Trash2, Heart, Info } from 'lucide-react';
+import { Users, Plus, Phone, ShieldAlert, Edit2, Trash2, Info, Camera, Upload, Image, Link } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 
 interface MembersViewProps {
@@ -24,7 +24,11 @@ export const MembersView: React.FC<MembersViewProps> = ({
   const [role, setRole] = useState('團員');
   const [phone, setPhone] = useState('');
   const [avatar, setAvatar] = useState('🐱');
+  const [avatarUrl, setAvatarUrl] = useState('');
   const [notes, setNotes] = useState('');
+  const [avatarTab, setAvatarTab] = useState<'emoji' | 'upload' | 'url'>('emoji');
+
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const avatarOptions = ['🐱', '🐥', '🐶', '🦊', '🐻', '🐼', '🐰', '🦁', '🦉', '🍙', '🍣', '🐸', '🐤', '🐷'];
 
@@ -34,7 +38,9 @@ export const MembersView: React.FC<MembersViewProps> = ({
     setRole('團員');
     setPhone('');
     setAvatar('🐱');
+    setAvatarUrl('');
     setNotes('');
+    setAvatarTab('emoji');
     setIsAddOpen(true);
   };
 
@@ -44,34 +50,51 @@ export const MembersView: React.FC<MembersViewProps> = ({
     setRole(m.role || '團員');
     setPhone(m.phone || '');
     setAvatar(m.avatar || '🐱');
+    setAvatarUrl(m.avatarUrl || '');
     setNotes(m.notes || '');
+    setAvatarTab(m.avatarUrl ? 'upload' : 'emoji');
     setIsAddOpen(true);
+  };
+
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (file.size > 5 * 1024 * 1024) {
+        alert('照片檔案較大，請選擇 5MB 以下的照片');
+        return;
+      }
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        if (typeof reader.result === 'string') {
+          setAvatarUrl(reader.result);
+        }
+      };
+      reader.readAsDataURL(file);
+    }
   };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!name.trim()) return;
 
+    const updatedData: Omit<GroupMember, 'id'> = {
+      name: name.trim(),
+      role: role.trim(),
+      phone: phone.trim(),
+      avatar: avatar,
+      avatarUrl: avatarUrl.trim() || undefined,
+      notes: notes.trim(),
+    };
+
     if (editingMemberId && onEditMember) {
-      onEditMember(editingMemberId, {
-        name: name.trim(),
-        role: role.trim(),
-        phone: phone.trim(),
-        avatar,
-        notes: notes.trim(),
-      });
+      onEditMember(editingMemberId, updatedData);
     } else {
-      onAddMember({
-        name: name.trim(),
-        role: role.trim(),
-        phone: phone.trim(),
-        avatar,
-        notes: notes.trim(),
-      });
+      onAddMember(updatedData);
     }
 
     setName('');
     setPhone('');
+    setAvatarUrl('');
     setNotes('');
     setIsAddOpen(false);
   };
@@ -126,25 +149,121 @@ export const MembersView: React.FC<MembersViewProps> = ({
               </div>
 
               <form onSubmit={handleSubmit} className="space-y-3">
-                {/* Avatar Emoji Selection */}
+                {/* Avatar Mode Selection */}
                 <div>
-                  <label className="block text-xs font-bold text-[#4E7C59] mb-1">選擇成員代表 Emoji</label>
-                  <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-1">
-                    {avatarOptions.map((a) => (
+                  <div className="flex items-center justify-between mb-1.5">
+                    <label className="block text-xs font-bold text-[#4E7C59]">成員頭像造型</label>
+                    <div className="flex items-center gap-1 bg-stone-100 p-0.5 rounded-lg text-[11px]">
                       <button
-                        key={a}
                         type="button"
-                        onClick={() => setAvatar(a)}
-                        className={`w-9 h-9 rounded-xl text-xl flex items-center justify-center transition-all flex-shrink-0 ${
-                          avatar === a
-                            ? 'bg-[#E2EAD8] scale-110 border border-[#3B523A] shadow-xs'
-                            : 'bg-white opacity-70 hover:opacity-100 border border-[#EBE3D5]'
+                        onClick={() => setAvatarTab('emoji')}
+                        className={`px-2 py-0.5 rounded-md font-bold transition-all ${
+                          avatarTab === 'emoji' ? 'bg-white text-[#3E3A37] shadow-xs' : 'text-stone-500'
                         }`}
                       >
-                        {a}
+                        Emoji
                       </button>
-                    ))}
+                      <button
+                        type="button"
+                        onClick={() => setAvatarTab('upload')}
+                        className={`px-2 py-0.5 rounded-md font-bold transition-all ${
+                          avatarTab === 'upload' ? 'bg-white text-[#3E3A37] shadow-xs' : 'text-stone-500'
+                        }`}
+                      >
+                        上傳照片
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setAvatarTab('url')}
+                        className={`px-2 py-0.5 rounded-md font-bold transition-all ${
+                          avatarTab === 'url' ? 'bg-white text-[#3E3A37] shadow-xs' : 'text-stone-500'
+                        }`}
+                      >
+                        圖片網址
+                      </button>
+                    </div>
                   </div>
+
+                  {avatarTab === 'emoji' && (
+                    <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-1">
+                      {avatarOptions.map((a) => (
+                        <button
+                          key={a}
+                          type="button"
+                          onClick={() => {
+                            setAvatar(a);
+                            setAvatarUrl('');
+                          }}
+                          className={`w-9 h-9 rounded-xl text-xl flex items-center justify-center transition-all flex-shrink-0 ${
+                            avatar === a && !avatarUrl
+                              ? 'bg-[#E2EAD8] scale-110 border border-[#3B523A] shadow-xs'
+                              : 'bg-white opacity-70 hover:opacity-100 border border-[#EBE3D5]'
+                          }`}
+                        >
+                          {a}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+
+                  {avatarTab === 'upload' && (
+                    <div className="space-y-2 py-1">
+                      <input
+                        type="file"
+                        ref={fileInputRef}
+                        accept="image/*"
+                        onChange={handleFileUpload}
+                        className="hidden"
+                      />
+                      <div className="flex items-center gap-3">
+                        <div className="w-12 h-12 rounded-2xl bg-[#E2EAD8] border border-[#C5D5B5] flex items-center justify-center overflow-hidden flex-shrink-0">
+                          {avatarUrl ? (
+                            <img src={avatarUrl} alt="預覽" className="w-full h-full object-cover" />
+                          ) : (
+                            <span className="text-2xl">{avatar}</span>
+                          )}
+                        </div>
+                        <div className="flex-1 space-y-1">
+                          <button
+                            type="button"
+                            onClick={() => fileInputRef.current?.click()}
+                            className="w-full flex items-center justify-center gap-1.5 py-1.5 px-3 bg-[#E2EAD8] hover:bg-[#C5D5B5] text-[#3B523A] font-bold text-xs rounded-xl border border-[#C5D5B5] transition-all"
+                          >
+                            <Upload className="w-3.5 h-3.5" />
+                            <span>選擇本地相片上傳</span>
+                          </button>
+                          {avatarUrl && (
+                            <button
+                              type="button"
+                              onClick={() => setAvatarUrl('')}
+                              className="text-[11px] text-rose-500 font-medium hover:underline block"
+                            >
+                              清除相片 (改用 Emoji)
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {avatarTab === 'url' && (
+                    <div className="space-y-2 py-1">
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="url"
+                          placeholder="貼上圖片網址 https://..."
+                          value={avatarUrl}
+                          onChange={(e) => setAvatarUrl(e.target.value)}
+                          className="flex-1 px-3 py-1.5 text-xs border border-[#EBE3D5] rounded-xl focus:outline-none focus:border-[#3B523A]"
+                        />
+                        {avatarUrl && (
+                          <div className="w-8 h-8 rounded-xl overflow-hidden border border-[#EBE3D5] flex-shrink-0">
+                            <img src={avatarUrl} alt="網址預覽" className="w-full h-full object-cover" />
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
                 </div>
 
                 {/* Name & Role */}
@@ -225,8 +344,12 @@ export const MembersView: React.FC<MembersViewProps> = ({
           >
             <div className="flex items-start justify-between gap-2">
               <div className="flex items-center gap-3">
-                <div className="w-11 h-11 rounded-2xl bg-[#E2EAD8] border border-[#C5D5B5] flex items-center justify-center text-2xl">
-                  {m.avatar || '🐱'}
+                <div className="w-11 h-11 rounded-2xl bg-[#E2EAD8] border border-[#C5D5B5] flex items-center justify-center text-2xl overflow-hidden flex-shrink-0">
+                  {m.avatarUrl ? (
+                    <img src={m.avatarUrl} alt={m.name} className="w-full h-full object-cover" />
+                  ) : (
+                    <span>{m.avatar || '🐱'}</span>
+                  )}
                 </div>
                 <div>
                   <h3 className="text-base font-bold text-[#3E3A37]">{m.name}</h3>
