@@ -706,6 +706,8 @@ export default function App() {
         <FirebaseSyncModal
           isOpen={isSyncModalOpen}
           onClose={() => setIsSyncModalOpen(false)}
+          data={data}
+          onUpdateData={(newData) => setData(newData)}
           roomId={roomId}
           onChangeRoomId={handleRoomChange}
           isSyncing={isSyncing}

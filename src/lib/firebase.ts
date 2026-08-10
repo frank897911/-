@@ -6,7 +6,7 @@ import { TravelAppData } from '../types';
 
 const app = initializeApp(firebaseConfig);
 
-export const db = getFirestore(app, firebaseConfig.firestoreDatabaseId || '(default)');
+export const db = getFirestore(app, (firebaseConfig as any).firestoreDatabaseId || '(default)');
 export const auth = getAuth(app);
 
 // Sign in anonymously to guarantee Firestore access
