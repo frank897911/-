@@ -40,7 +40,7 @@ export const Navbar: React.FC<NavbarProps> = ({
   };
 
   return (
-    <header className="sticky top-0 z-30 bg-white/95 backdrop-blur-md border-b border-[#F1E9DB] px-3.5 pt-9 sm:pt-3.5 pb-2.5 transition-all shadow-2xs">
+    <header className="sticky top-0 z-30 bg-white/95 backdrop-blur-md border-b border-[#F1E9DB] px-3.5 py-2 transition-all shadow-2xs">
       <div className="max-w-4xl mx-auto space-y-2">
         {/* Top Row: App Logo, Trip Title, Date & View Mode */}
         <div className="flex items-center justify-between gap-2">

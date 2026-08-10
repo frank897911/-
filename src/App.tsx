@@ -455,7 +455,19 @@ export default function App() {
             : 'max-w-4xl min-h-screen bg-[#FDFBF7]'
         }`}
       >
-        {/* Top Navbar */}
+        {/* Top Cover Banner */}
+        <div className="pt-[max(0.75rem,env(safe-area-inset-top))] px-3 sm:px-4">
+          <TripCoverBanner
+            coverImage={data.coverImage}
+            tripTitle={data.tripTitle}
+            startDate={data.startDate}
+            endDate={data.endDate}
+            onOpenEditTripModal={() => setIsEditTripOpen(true)}
+            onUpdateCoverImage={handleUpdateCoverImage}
+          />
+        </div>
+
+        {/* Sticky Control Navbar */}
         <Navbar
           tripTitle={data.tripTitle}
           startDate={data.startDate}
@@ -473,14 +485,6 @@ export default function App() {
 
         {/* Main Content View Container */}
         <main className="p-3 sm:p-4">
-          <TripCoverBanner
-            coverImage={data.coverImage}
-            tripTitle={data.tripTitle}
-            startDate={data.startDate}
-            endDate={data.endDate}
-            onOpenEditTripModal={() => setIsEditTripOpen(true)}
-            onUpdateCoverImage={handleUpdateCoverImage}
-          />
 
           <AnimatePresence mode="wait">
             {activeTab === 'itinerary' && (
