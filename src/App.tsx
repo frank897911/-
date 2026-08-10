@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { ActiveTab, TravelAppData, ItineraryItem, GourmetItem, ShoppingItem, ExpenseItem, ItineraryDay, JournalEntry, ChecklistItem, GroupMember, FlightDetail, HotelDetail, BookingVoucher } from './types';
 import { initialTravelData, emergencyContactsList } from './data/initialData';
+import { sortItineraryItems } from './utils';
 import { Navbar } from './components/Navbar';
 import { BottomNav } from './components/BottomNav';
 import { DailyItineraryView } from './components/DailyItineraryView';
@@ -220,9 +221,10 @@ export default function App() {
       days: prev.days.map((day) => {
         if (day.id !== dayId) return day;
         if (editId) {
+          const updatedItems = day.items.map((i) => (i.id === editId ? { ...itemData, id: editId } : i));
           return {
             ...day,
-            items: day.items.map((i) => (i.id === editId ? { ...itemData, id: editId } : i)),
+            items: sortItineraryItems(updatedItems),
           };
         } else {
           const newItem: ItineraryItem = {
@@ -231,7 +233,7 @@ export default function App() {
           };
           return {
             ...day,
-            items: [...day.items, newItem],
+            items: sortItineraryItems([...day.items, newItem]),
           };
         }
       }),

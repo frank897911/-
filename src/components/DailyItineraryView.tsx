@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { ItineraryDay, ItineraryItem, ItemCategory } from '../types';
+import { parseTimeToMinutes } from '../utils';
 import {
   MapPin,
   Car,
@@ -75,10 +76,12 @@ export const DailyItineraryView: React.FC<DailyItineraryViewProps> = ({
   if (!activeDay) return null;
 
 
-  const filteredItems = activeDay.items.filter((item) => {
-    if (selectedCategory === 'all') return true;
-    return item.category === selectedCategory;
-  });
+  const filteredItems = [...activeDay.items]
+    .filter((item) => {
+      if (selectedCategory === 'all') return true;
+      return item.category === selectedCategory;
+    })
+    .sort((a, b) => parseTimeToMinutes(a.time) - parseTimeToMinutes(b.time));
 
   const handleCopyMapCode = (itemId: string, code: string) => {
     navigator.clipboard.writeText(code);
