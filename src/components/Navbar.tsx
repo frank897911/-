@@ -1,5 +1,5 @@
 import React from 'react';
-import { MapPin, Calendar, ArrowRightLeft, Smartphone, Monitor, Edit3, HardDrive } from 'lucide-react';
+import { MapPin, Calendar, ArrowRightLeft, Smartphone, Monitor, Edit3, Share2 } from 'lucide-react';
 
 interface NavbarProps {
   tripTitle: string;
@@ -90,15 +90,15 @@ export const Navbar: React.FC<NavbarProps> = ({
 
         {/* Bottom Row: Co-editing Button & Exchange Rate Button */}
         <div className="flex items-center gap-2 pt-1.5 border-t border-[#F8F4ED]">
-          {/* Google Drive Co-editing Button */}
+          {/* Save & Share Button */}
           {onOpenSyncModal && (
             <button
               onClick={onOpenSyncModal}
-              title="Google Drive 雲端共編與備份設定"
+              title="儲存並產生分享連結傳給旅伴"
               className="flex-1 sm:flex-initial flex items-center justify-center gap-1.5 px-3 py-1 bg-[#E2EAD8] hover:bg-[#C5D5B5] text-[#3B523A] rounded-full border border-[#C5D5B5] text-xs font-bold transition-all active:scale-95 shadow-2xs"
             >
-              <HardDrive className="w-3.5 h-3.5 text-[#2B7A82] flex-shrink-0" />
-              <span>雲端共編與備份</span>
+              <Share2 className="w-3.5 h-3.5 text-[#2B7A82] flex-shrink-0" />
+              <span>儲存與分享給旅伴</span>
             </button>
           )}
 

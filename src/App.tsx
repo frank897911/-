@@ -14,12 +14,22 @@ import { AiAssistantView } from './components/AiAssistantView';
 import { AddItemModal, AddGourmetModal, AddShoppingModal, ExchangeModal, EditTripModal, EditDayModal } from './components/Modals';
 import { TripCoverBanner } from './components/TripCoverBanner';
 import { CloudSyncModal } from './components/CloudSyncModal';
+import { parseShareableUrl, clearShareUrlHash } from './lib/shareUrl';
 import { motion, AnimatePresence } from 'motion/react';
 
 const LOCAL_STORAGE_KEY = 'sendai_japan_travel_data_v3';
 
 export default function App() {
+  const [sharedToast, setSharedToast] = useState<string | null>(null);
+
   const [data, setData] = useState<TravelAppData>(() => {
+    // 1. Check if there is a shared trip link in the URL hash
+    const sharedData = parseShareableUrl();
+    if (sharedData) {
+      return sharedData;
+    }
+
+    // 2. Otherwise load from local storage
     const saved = localStorage.getItem(LOCAL_STORAGE_KEY);
     if (saved) {
       try {
@@ -30,6 +40,16 @@ export default function App() {
     }
     return initialTravelData;
   });
+
+  // Toast notification when shared trip is detected from URL
+  useEffect(() => {
+    const sharedData = parseShareableUrl();
+    if (sharedData) {
+      setSharedToast(`🎉 已為您自動載入旅伴分享的行程：「${sharedData.tripTitle || '最新行程'}」！`);
+      clearShareUrlHash();
+      setTimeout(() => setSharedToast(null), 6000);
+    }
+  }, []);
 
   const [isSyncModalOpen, setIsSyncModalOpen] = useState(false);
 
@@ -362,6 +382,26 @@ export default function App() {
             : 'max-w-4xl min-h-screen bg-[#FDFBF7]'
         }`}
       >
+        {/* Shared Trip Toast Alert */}
+        <AnimatePresence>
+          {sharedToast && (
+            <motion.div
+              initial={{ opacity: 0, y: -20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              className="mx-3 mt-3 p-3 bg-emerald-600 text-white rounded-xl shadow-md text-xs font-bold flex items-center justify-between z-30 relative"
+            >
+              <span>{sharedToast}</span>
+              <button
+                onClick={() => setSharedToast(null)}
+                className="px-2 py-0.5 bg-white/20 hover:bg-white/30 rounded-md text-white text-[11px]"
+              >
+                我知道了
+              </button>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
         {/* Top Cover Banner */}
         <div className="pt-[max(0.75rem,env(safe-area-inset-top))] px-3 sm:px-4">
           <TripCoverBanner
