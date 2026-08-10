@@ -26,7 +26,7 @@ export async function ensureAuth() {
  */
 export function subscribeToTrip(
   tripId: string,
-  onData: (data: TravelAppData) => void,
+  onData: (data: TravelAppData | null, exists: boolean) => void,
   onError?: (err: Error) => void
 ) {
   const tripRef = doc(db, 'trips', tripId);
@@ -36,9 +36,10 @@ export function subscribeToTrip(
     (snapshot) => {
       if (snapshot.exists()) {
         const remoteData = snapshot.data() as TravelAppData;
-        onData(remoteData);
+        onData(remoteData, true);
       } else {
         // Document doesn't exist yet in remote
+        onData(null, false);
       }
     },
     (err) => {

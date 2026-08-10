@@ -93,21 +93,21 @@ export const FirebaseSyncModal: React.FC<FirebaseSyncModalProps> = ({
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <span className="relative flex h-2.5 w-2.5">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                  <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>
+                  <span className={`animate-ping absolute inline-flex h-full w-full rounded-full ${isOnline ? 'bg-emerald-400' : 'bg-amber-400'} opacity-75`}></span>
+                  <span className={`relative inline-flex rounded-full h-2.5 w-2.5 ${isOnline ? 'bg-emerald-500' : 'bg-amber-500'}`}></span>
                 </span>
-                <span className="text-xs font-bold text-[#4E7C59]">
-                  {isOnline ? 'Firebase 雲端連線正常 (即時同步中)' : '離線模式'}
+                <span className={`text-xs font-bold ${isOnline ? 'text-[#4E7C59]' : 'text-amber-800'}`}>
+                  {isOnline ? 'Firebase 雲端連線正常 (即時同步中)' : '離線/本機模式 (資料已安全保存在瀏覽器)'}
                 </span>
               </div>
               <button
                 onClick={onManualUpload}
                 disabled={isSyncing}
                 className="flex items-center gap-1 text-[11px] font-bold text-[#3B523A] hover:bg-[#E2EAD8] px-2 py-1 rounded-lg transition-all"
-                title="強制將目前狀態同步上雲"
+                title="嘗試手動重新同步上雲"
               >
                 <RefreshCw className={`w-3 h-3 ${isSyncing ? 'animate-spin' : ''}`} />
-                <span>{isSyncing ? '同步中...' : '手動同步'}</span>
+                <span>{isSyncing ? '同步中...' : '重新連線'}</span>
               </button>
             </div>
 

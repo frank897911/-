@@ -64,6 +64,7 @@ export default function App() {
   const [isExchangeOpen, setIsExchangeOpen] = useState(false);
 
   const isRemoteUpdatingRef = useRef(false);
+  const lastSavedDataStrRef = useRef<string>('');
 
   // Real-time Firebase Sync Subscription
   useEffect(() => {
@@ -75,17 +76,29 @@ export default function App() {
 
       unsubscribe = subscribeToTrip(
         roomId,
-        (remoteData) => {
-          isRemoteUpdatingRef.current = true;
-          setData(remoteData);
-          localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(remoteData));
-          setIsSyncing(false);
+        (remoteData, exists) => {
           setIsOnline(true);
+          setIsSyncing(false);
           const now = new Date();
           setLastSyncedTime(`${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}:${now.getSeconds().toString().padStart(2, '0')}`);
-          setTimeout(() => {
-            isRemoteUpdatingRef.current = false;
-          }, 300);
+
+          if (exists && remoteData) {
+            const remoteStr = JSON.stringify(remoteData);
+            lastSavedDataStrRef.current = remoteStr;
+            isRemoteUpdatingRef.current = true;
+            setData(remoteData);
+            localStorage.setItem(LOCAL_STORAGE_KEY, remoteStr);
+            setTimeout(() => {
+              isRemoteUpdatingRef.current = false;
+            }, 300);
+          } else if (!exists) {
+            // First time room created or room document empty -> seed with local data
+            const initialStr = JSON.stringify(data);
+            lastSavedDataStrRef.current = initialStr;
+            saveTripToCloud(roomId, data).catch((err) => {
+              console.warn('Initial cloud seed failed:', err);
+            });
+          }
         },
         (err) => {
           console.warn('Firebase sync warning:', err);
@@ -104,26 +117,32 @@ export default function App() {
 
   // Save to LocalStorage & push to Firebase Cloud when user edits data
   useEffect(() => {
-    localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(data));
+    const currentStr = JSON.stringify(data);
+    localStorage.setItem(LOCAL_STORAGE_KEY, currentStr);
 
-    // Push local edits to Firebase if not currently receiving a remote snapshot
-    if (!isRemoteUpdatingRef.current) {
-      setIsSyncing(true);
-      const timer = setTimeout(() => {
-        saveTripToCloud(roomId, data)
-          .then(() => {
-            setIsSyncing(false);
-            const now = new Date();
-            setLastSyncedTime(`${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}:${now.getSeconds().toString().padStart(2, '0')}`);
-          })
-          .catch((e) => {
-            console.error('Save to cloud failed:', e);
-            setIsSyncing(false);
-          });
-      }, 500);
-
-      return () => clearTimeout(timer);
+    // Skip cloud push if data is unchanged from last cloud save/load, or if remote snapshot updating
+    if (isRemoteUpdatingRef.current || currentStr === lastSavedDataStrRef.current) {
+      return;
     }
+
+    setIsSyncing(true);
+    const timer = setTimeout(() => {
+      saveTripToCloud(roomId, data)
+        .then(() => {
+          lastSavedDataStrRef.current = currentStr;
+          setIsSyncing(false);
+          setIsOnline(true);
+          const now = new Date();
+          setLastSyncedTime(`${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}:${now.getSeconds().toString().padStart(2, '0')}`);
+        })
+        .catch((e) => {
+          console.warn('Save to cloud failed:', e);
+          setIsSyncing(false);
+          setIsOnline(false);
+        });
+    }, 1200);
+
+    return () => clearTimeout(timer);
   }, [data, roomId]);
 
   const handleRoomChange = (newRoomId: string) => {
