@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { ExpenseItem, ExpenseCategory, PaymentMethod, GroupMember } from '../types';
-import { Wallet, Plus, CreditCard, DollarSign, Calculator, Trash2, PieChart, Users, ArrowRightLeft, Sparkles, Check } from 'lucide-react';
+import { Wallet, Plus, CreditCard, DollarSign, Calculator, Trash2, PieChart, Users, ArrowRightLeft, Sparkles, Check, Edit2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 
 interface ExpenseViewProps {
@@ -10,6 +10,7 @@ interface ExpenseViewProps {
   totalBudgetTwd: number;
   onAddExpense: (expense: Omit<ExpenseItem, 'id'>) => void;
   onDeleteExpense: (id: string) => void;
+  onUpdateTotalBudget?: (newBudget: number) => void;
 }
 
 export const ExpenseView: React.FC<ExpenseViewProps> = ({
@@ -19,8 +20,11 @@ export const ExpenseView: React.FC<ExpenseViewProps> = ({
   totalBudgetTwd,
   onAddExpense,
   onDeleteExpense,
+  onUpdateTotalBudget,
 }) => {
   const [isAddOpen, setIsAddOpen] = useState(false);
+  const [isEditingBudget, setIsEditingBudget] = useState(false);
+  const [tempBudgetInput, setTempBudgetInput] = useState('');
 
   // Form State
   const [itemTitle, setItemTitle] = useState('');
@@ -131,9 +135,23 @@ export const ExpenseView: React.FC<ExpenseViewProps> = ({
 
         {/* Budget Progress Bar */}
         <div className="space-y-1">
-          <div className="flex justify-between text-xs text-[#78716C] font-medium">
+          <div className="flex justify-between items-center text-xs text-[#78716C] font-medium">
             <span>預算剩餘：NT$ {budgetLeftTwd.toLocaleString()}</span>
-            <span>總預算：NT$ {totalBudgetTwd.toLocaleString()} ({budgetUsagePercent}%)</span>
+            <div className="flex items-center gap-1">
+              <span>總預算：NT$ {totalBudgetTwd.toLocaleString()} ({budgetUsagePercent}%)</span>
+              <button
+                type="button"
+                onClick={() => {
+                  setTempBudgetInput(String(totalBudgetTwd));
+                  setIsEditingBudget(true);
+                }}
+                className="p-1 rounded-md bg-[#E2EAD8] text-[#3B523A] hover:bg-[#C5D5B5] transition-all font-bold text-[11px] flex items-center gap-0.5 active:scale-95 ml-0.5"
+                title="點擊修改旅行總預算"
+              >
+                <Edit2 className="w-3 h-3" />
+                <span>編輯</span>
+              </button>
+            </div>
           </div>
           <div className="w-full bg-[#EBE3D5] h-2.5 rounded-full overflow-hidden">
             <div
@@ -145,6 +163,97 @@ export const ExpenseView: React.FC<ExpenseViewProps> = ({
           </div>
         </div>
       </div>
+
+      {/* Edit Budget Modal */}
+      <AnimatePresence>
+        {isEditingBudget && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-xs">
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              className="bg-[#FFFDF7] rounded-3xl p-5 border border-[#EBE3D5] shadow-2xl max-w-xs w-full space-y-4"
+            >
+              <div className="flex items-center justify-between border-b border-[#EBE3D5] pb-3">
+                <h3 className="text-base font-bold text-[#3E3A37] flex items-center gap-2">
+                  <span>💰 設定旅行總預算</span>
+                </h3>
+                <button
+                  onClick={() => setIsEditingBudget(false)}
+                  className="w-7 h-7 rounded-full bg-stone-100 hover:bg-stone-200 flex items-center justify-center text-stone-500 font-bold text-sm"
+                >
+                  ✕
+                </button>
+              </div>
+
+              <form
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  const parsed = parseFloat(tempBudgetInput);
+                  if (!isNaN(parsed) && parsed >= 0 && onUpdateTotalBudget) {
+                    onUpdateTotalBudget(parsed);
+                    setIsEditingBudget(false);
+                  }
+                }}
+                className="space-y-3"
+              >
+                <div>
+                  <label className="block text-xs font-bold text-[#4E7C59] mb-1">
+                    總預算金額 (新台幣 NT$)
+                  </label>
+                  <div className="relative">
+                    <span className="absolute left-3 top-2.5 text-xs text-stone-400 font-bold">NT$</span>
+                    <input
+                      type="number"
+                      required
+                      min="0"
+                      step="1000"
+                      value={tempBudgetInput}
+                      onChange={(e) => setTempBudgetInput(e.target.value)}
+                      placeholder="例：60000"
+                      className="w-full pl-11 pr-3 py-2 text-sm border border-[#EBE3D5] rounded-xl focus:outline-none focus:border-[#3B523A] font-bold font-mono"
+                    />
+                  </div>
+                  {tempBudgetInput && !isNaN(parseFloat(tempBudgetInput)) && exchangeRate > 0 && (
+                    <p className="text-[11px] text-stone-500 mt-1 font-mono">
+                      約合 ¥{Math.round(parseFloat(tempBudgetInput) / exchangeRate).toLocaleString()} JPY
+                    </p>
+                  )}
+                </div>
+
+                <div className="grid grid-cols-3 gap-1.5 pt-1">
+                  {[30000, 50000, 80000].map((quickVal) => (
+                    <button
+                      key={quickVal}
+                      type="button"
+                      onClick={() => setTempBudgetInput(String(quickVal))}
+                      className="py-1 px-2 text-[11px] bg-[#FFF9F2] hover:bg-[#E2EAD8] text-[#3B523A] border border-[#C5D5B5] rounded-lg font-bold transition-all"
+                    >
+                      {quickVal / 10000} 萬
+                    </button>
+                  ))}
+                </div>
+
+                <div className="flex gap-2 pt-2">
+                  <button
+                    type="button"
+                    onClick={() => setIsEditingBudget(false)}
+                    className="flex-1 py-2 text-xs font-bold text-stone-600 bg-stone-100 hover:bg-stone-200 rounded-xl"
+                  >
+                    取消
+                  </button>
+                  <button
+                    type="submit"
+                    className="flex-1 py-2 text-xs font-bold text-white bg-[#3B523A] hover:bg-[#2C3E2B] rounded-xl shadow-xs"
+                  >
+                    儲存預算
+                  </button>
+                </div>
+              </form>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
 
       {/* Add Expense Modal */}
       <AnimatePresence>

@@ -87,14 +87,14 @@ export const PlanningView: React.FC<PlanningViewProps> = ({
       />
 
       {/* Header Banner */}
-      <div className="bg-[#FFFDF7] p-4 rounded-2xl border border-[#EBE3D5] shadow-[3px_3px_0px_#E2DDD0] flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-[#E2EAD8] text-[#3B523A] border border-[#C5D5B5] flex items-center justify-center font-bold text-xl">
+      <div className="bg-[#FFFDF7] p-3.5 sm:p-4 rounded-2xl border border-[#EBE3D5] shadow-[3px_3px_0px_#E2DDD0] flex items-center justify-between gap-2">
+        <div className="flex items-center gap-2.5 sm:gap-3 min-w-0 flex-1">
+          <div className="w-10 h-10 rounded-xl bg-[#E2EAD8] text-[#3B523A] border border-[#C5D5B5] flex items-center justify-center font-bold text-xl flex-shrink-0">
             📋
           </div>
-          <div>
-            <h2 className="text-base font-bold text-[#3E3A37]">行前準備 ‧ 行李清單 ‧ 採買</h2>
-            <p className="text-xs text-[#8C827A] mt-0.5">
+          <div className="min-w-0 flex-1">
+            <h2 className="text-sm sm:text-base font-bold text-[#3E3A37] truncate">行前準備 ‧ 行李清單 ‧ 採買</h2>
+            <p className="text-[11px] sm:text-xs text-[#8C827A] mt-0.5 line-clamp-1">
               分配團員任務、行李點檢與必買藥妝採買清單
             </p>
           </div>
@@ -102,10 +102,10 @@ export const PlanningView: React.FC<PlanningViewProps> = ({
 
         <button
           onClick={handleOpenAddModal}
-          className="flex items-center gap-1 px-3.5 py-2 bg-[#3B523A] hover:bg-[#2C3E2B] text-white text-xs font-bold rounded-xl shadow-[2px_2px_0px_#223322] active:scale-95 transition-all"
+          className="flex items-center gap-1.5 px-3 sm:px-3.5 py-2 bg-[#3B523A] hover:bg-[#2C3E2B] text-white text-xs font-bold rounded-xl shadow-[2px_2px_0px_#223322] active:scale-95 transition-all whitespace-nowrap flex-shrink-0"
         >
-          <Plus className="w-4 h-4" />
-          <span>新增項目</span>
+          <Plus className="w-4 h-4 flex-shrink-0" />
+          <span className="whitespace-nowrap">新增項目</span>
         </button>
       </div>
 

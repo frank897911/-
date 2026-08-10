@@ -539,6 +539,9 @@ export default function App() {
                   totalBudgetTwd={data.totalBudgetTwd}
                   onAddExpense={handleAddExpense}
                   onDeleteExpense={handleDeleteExpense}
+                  onUpdateTotalBudget={(newBudget) => {
+                    setData((prev) => ({ ...prev, totalBudgetTwd: newBudget }));
+                  }}
                 />
               </motion.div>
             )}
