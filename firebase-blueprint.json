@@ -1,0 +1,26 @@
+{
+  "entities": {
+    "trips": {
+      "title": "Trip Data",
+      "description": "Shared travel itinerary, expenses, bookings, members, and journal",
+      "type": "object",
+      "properties": {
+        "tripTitle": { "type": "string" },
+        "startDate": { "type": "string" },
+        "endDate": { "type": "string" },
+        "days": { "type": "array" },
+        "gourmets": { "type": "array" },
+        "shoppings": { "type": "array" },
+        "expenses": { "type": "array" },
+        "journals": { "type": "array" },
+        "checklists": { "type": "array" },
+        "members": { "type": "array" },
+        "flights": { "type": "array" },
+        "hotels": { "type": "array" },
+        "vouchers": { "type": "array" },
+        "updatedAt": { "type": "string" }
+      },
+      "required": ["tripTitle", "startDate", "endDate", "days"]
+    }
+  }
+}

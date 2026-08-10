@@ -1,5 +1,5 @@
 import React from 'react';
-import { MapPin, Calendar, ArrowRightLeft, Smartphone, Monitor, Edit3 } from 'lucide-react';
+import { MapPin, Calendar, ArrowRightLeft, Smartphone, Monitor, Edit3, Users, Cloud } from 'lucide-react';
 
 interface NavbarProps {
   tripTitle: string;
@@ -8,6 +8,9 @@ interface NavbarProps {
   exchangeRate: number;
   onOpenExchangeModal: () => void;
   onOpenEditTripModal?: () => void;
+  onOpenSyncModal?: () => void;
+  isSyncing?: boolean;
+  isOnline?: boolean;
   isMobileFrameMode: boolean;
   onToggleFrameMode: () => void;
   onSelectTab: (tab: any) => void;
@@ -20,6 +23,9 @@ export const Navbar: React.FC<NavbarProps> = ({
   exchangeRate,
   onOpenExchangeModal,
   onOpenEditTripModal,
+  onOpenSyncModal,
+  isSyncing = false,
+  isOnline = true,
   isMobileFrameMode,
   onToggleFrameMode,
   onSelectTab,
@@ -71,16 +77,34 @@ export const Navbar: React.FC<NavbarProps> = ({
           </div>
         </div>
 
-        {/* Right Actions: Currency Converter Pill & View Mode Toggle */}
-        <div className="flex items-center gap-2">
+        {/* Right Actions: Firebase Co-editing, Currency Converter & View Mode */}
+        <div className="flex items-center gap-1.5 sm:gap-2">
+          {/* Firebase Co-editing Button */}
+          {onOpenSyncModal && (
+            <button
+              onClick={onOpenSyncModal}
+              title="旅伴共同編輯與雲端同步設定"
+              className="flex items-center gap-1.5 px-2.5 py-1 bg-[#E2EAD8] hover:bg-[#C5D5B5] text-[#3B523A] rounded-full border border-[#C5D5B5] text-xs font-bold transition-all active:scale-95 shadow-2xs"
+            >
+              <span className="relative flex h-2 w-2">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-600"></span>
+              </span>
+              <Users className="w-3.5 h-3.5 text-[#3B523A]" />
+              <span className="hidden sm:inline">旅伴共同編輯</span>
+              <span className="sm:hidden">共編</span>
+            </button>
+          )}
+
           {/* Currency Pill */}
           <button
             onClick={onOpenExchangeModal}
             title="匯率試算與設定"
-            className="flex items-center gap-1.5 px-3 py-1 bg-[#FFF9F2] hover:bg-[#FFF2E0] text-[#7A621E] rounded-full border border-[#F1E9DB] text-xs font-semibold transition-all active:scale-95"
+            className="flex items-center gap-1.5 px-2.5 py-1 bg-[#FFF9F2] hover:bg-[#FFF2E0] text-[#7A621E] rounded-full border border-[#F1E9DB] text-xs font-semibold transition-all active:scale-95"
           >
             <ArrowRightLeft className="w-3 h-3 text-[#D49E24]" />
-            <span>1 JPY = {exchangeRate} TWD</span>
+            <span className="hidden sm:inline">1 JPY = {exchangeRate} TWD</span>
+            <span className="sm:hidden">{exchangeRate}</span>
           </button>
 
           {/* Desktop Responsive Frame Toggle */}
@@ -96,4 +120,5 @@ export const Navbar: React.FC<NavbarProps> = ({
     </header>
   );
 };
+
 

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { ActiveTab, TravelAppData, ItineraryItem, GourmetItem, ShoppingItem, ExpenseItem, ItineraryDay, JournalEntry, ChecklistItem, GroupMember, FlightDetail, HotelDetail, BookingVoucher } from './types';
 import { initialTravelData, emergencyContactsList } from './data/initialData';
 import { Navbar } from './components/Navbar';
@@ -11,6 +11,8 @@ import { PlanningView } from './components/PlanningView';
 import { MembersView } from './components/MembersView';
 import { AiAssistantView } from './components/AiAssistantView';
 import { AddItemModal, AddGourmetModal, AddShoppingModal, ExchangeModal, EditTripModal, EditDayModal } from './components/Modals';
+import { FirebaseSyncModal } from './components/FirebaseSyncModal';
+import { subscribeToTrip, saveTripToCloud, ensureAuth } from './lib/firebase';
 import { motion, AnimatePresence } from 'motion/react';
 
 const LOCAL_STORAGE_KEY = 'sendai_japan_travel_data_v3';
@@ -28,6 +30,22 @@ export default function App() {
     return initialTravelData;
   });
 
+  // Room ID for Firebase multi-user co-editing
+  const [roomId, setRoomId] = useState<string>(() => {
+    const params = new URLSearchParams(window.location.search);
+    const urlRoom = params.get('room') || params.get('trip');
+    if (urlRoom) {
+      localStorage.setItem('sendai_trip_room_id', urlRoom.trim());
+      return urlRoom.trim();
+    }
+    return localStorage.getItem('sendai_trip_room_id') || 'sendai-trip-2026';
+  });
+
+  const [isSyncModalOpen, setIsSyncModalOpen] = useState(false);
+  const [isSyncing, setIsSyncing] = useState(false);
+  const [isOnline, setIsOnline] = useState(true);
+  const [lastSyncedTime, setLastSyncedTime] = useState<string | null>(null);
+
   const [activeTab, setActiveTab] = useState<ActiveTab>('itinerary');
   const [activeDayId, setActiveDayId] = useState<string>(data.days[0]?.id || 'day-1');
   const [isMobileFrameMode, setIsMobileFrameMode] = useState<boolean>(true);
@@ -43,10 +61,91 @@ export default function App() {
 
   const [isExchangeOpen, setIsExchangeOpen] = useState(false);
 
-  // Save to LocalStorage
+  const isRemoteUpdatingRef = useRef(false);
+
+  // Real-time Firebase Sync Subscription
+  useEffect(() => {
+    let unsubscribe: (() => void) | null = null;
+
+    async function initFirebase() {
+      await ensureAuth();
+      setIsSyncing(true);
+
+      unsubscribe = subscribeToTrip(
+        roomId,
+        (remoteData) => {
+          isRemoteUpdatingRef.current = true;
+          setData(remoteData);
+          localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(remoteData));
+          setIsSyncing(false);
+          setIsOnline(true);
+          const now = new Date();
+          setLastSyncedTime(`${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}:${now.getSeconds().toString().padStart(2, '0')}`);
+          setTimeout(() => {
+            isRemoteUpdatingRef.current = false;
+          }, 300);
+        },
+        (err) => {
+          console.warn('Firebase sync warning:', err);
+          setIsSyncing(false);
+          setIsOnline(false);
+        }
+      );
+    }
+
+    initFirebase();
+
+    return () => {
+      if (unsubscribe) unsubscribe();
+    };
+  }, [roomId]);
+
+  // Save to LocalStorage & push to Firebase Cloud when user edits data
   useEffect(() => {
     localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(data));
-  }, [data]);
+
+    // Push local edits to Firebase if not currently receiving a remote snapshot
+    if (!isRemoteUpdatingRef.current) {
+      setIsSyncing(true);
+      const timer = setTimeout(() => {
+        saveTripToCloud(roomId, data)
+          .then(() => {
+            setIsSyncing(false);
+            const now = new Date();
+            setLastSyncedTime(`${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}:${now.getSeconds().toString().padStart(2, '0')}`);
+          })
+          .catch((e) => {
+            console.error('Save to cloud failed:', e);
+            setIsSyncing(false);
+          });
+      }, 500);
+
+      return () => clearTimeout(timer);
+    }
+  }, [data, roomId]);
+
+  const handleRoomChange = (newRoomId: string) => {
+    setRoomId(newRoomId);
+    localStorage.setItem('sendai_trip_room_id', newRoomId);
+    // Update URL param without refreshing page
+    const url = new URL(window.location.href);
+    url.searchParams.set('room', newRoomId);
+    window.history.pushState({}, '', url.toString());
+  };
+
+  const handleManualUpload = () => {
+    setIsSyncing(true);
+    saveTripToCloud(roomId, data)
+      .then(() => {
+        setIsSyncing(false);
+        const now = new Date();
+        setLastSyncedTime(`${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}:${now.getSeconds().toString().padStart(2, '0')}`);
+      })
+      .catch((e) => {
+        console.error('Manual upload failed:', e);
+        setIsSyncing(false);
+      });
+  };
 
   /* Trip & Day Handlers */
   const handleSaveTripDetails = (title: string, start: string, end: string) => {
@@ -355,6 +454,9 @@ export default function App() {
           exchangeRate={data.exchangeRateJpyToTwd}
           onOpenExchangeModal={() => setIsExchangeOpen(true)}
           onOpenEditTripModal={() => setIsEditTripOpen(true)}
+          onOpenSyncModal={() => setIsSyncModalOpen(true)}
+          isSyncing={isSyncing}
+          isOnline={isOnline}
           isMobileFrameMode={isMobileFrameMode}
           onToggleFrameMode={() => setIsMobileFrameMode(!isMobileFrameMode)}
           onSelectTab={setActiveTab}
@@ -552,6 +654,17 @@ export default function App() {
               totalBudgetTwd: newBudget,
             }));
           }}
+        />
+
+        <FirebaseSyncModal
+          isOpen={isSyncModalOpen}
+          onClose={() => setIsSyncModalOpen(false)}
+          roomId={roomId}
+          onChangeRoomId={handleRoomChange}
+          isSyncing={isSyncing}
+          isOnline={isOnline}
+          lastSyncedTime={lastSyncedTime}
+          onManualUpload={handleManualUpload}
         />
       </div>
     </div>
