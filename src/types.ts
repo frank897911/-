@@ -201,6 +201,7 @@ export interface TravelAppData {
   tripTitle: string;
   startDate: string;
   endDate: string;
+  coverImage?: string;
   pinCode?: string; // e.g. "007"
   exchangeRateJpyToTwd: number; // e.g. 0.215
   totalBudgetTwd: number;

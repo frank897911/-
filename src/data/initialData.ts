@@ -53,6 +53,7 @@ export const initialTravelData: TravelAppData = {
   tripTitle: '東北仙台 ‧ 楓葉溫泉美食六日遊',
   startDate: '2026-10-08',
   endDate: '2026-10-13',
+  coverImage: 'https://images.unsplash.com/photo-1503899036084-c55cdd92da26?auto=format&fit=crop&w=1200&q=80',
   pinCode: '007',
   exchangeRateJpyToTwd: 0.215,
   totalBudgetTwd: 60000,

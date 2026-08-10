@@ -658,7 +658,8 @@ interface EditTripModalProps {
   tripTitle: string;
   startDate: string;
   endDate: string;
-  onSave: (title: string, start: string, end: string) => void;
+  coverImage?: string;
+  onSave: (title: string, start: string, end: string, coverImage?: string) => void;
 }
 
 export const EditTripModal: React.FC<EditTripModalProps> = ({
@@ -667,6 +668,7 @@ export const EditTripModal: React.FC<EditTripModalProps> = ({
   tripTitle,
   startDate,
   endDate,
+  coverImage,
   onSave,
 }) => {
   if (!isOpen) return null;
@@ -674,10 +676,24 @@ export const EditTripModal: React.FC<EditTripModalProps> = ({
   const [title, setTitle] = useState(tripTitle);
   const [start, setStart] = useState(startDate);
   const [end, setEnd] = useState(endDate);
+  const [cover, setCover] = useState(coverImage || '');
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        if (typeof reader.result === 'string') {
+          setCover(reader.result);
+        }
+      };
+      reader.readAsDataURL(file);
+    }
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    onSave(title, start, end);
+    onSave(title, start, end, cover);
     onClose();
   };
 
@@ -687,7 +703,7 @@ export const EditTripModal: React.FC<EditTripModalProps> = ({
         <div className="flex items-center justify-between border-b border-[#F1E9DB] pb-2">
           <h3 className="text-base font-bold text-[#4A4A4A] flex items-center gap-1.5">
             <Edit3 className="w-4 h-4 text-[#2B7A82]" />
-            <span>編輯旅程標題與日期</span>
+            <span>編輯旅程資訊與封面照片</span>
           </h3>
           <button onClick={onClose} className="p-1 text-[#8C827A]">
             <X className="w-5 h-5" />
@@ -726,6 +742,38 @@ export const EditTripModal: React.FC<EditTripModalProps> = ({
                 value={end}
                 onChange={(e) => setEnd(e.target.value)}
                 className="w-full px-2 py-1.5 bg-white border border-[#F1E9DB] rounded-lg font-mono outline-none"
+              />
+            </div>
+          </div>
+
+          {/* Cover Image Settings */}
+          <div>
+            <label className="block font-bold text-[#4A4A4A] mb-1">封面照片 (預覽/更換)</label>
+            {cover && (
+              <div className="relative h-24 w-full rounded-lg overflow-hidden mb-2 border border-[#F1E9DB]">
+                <img src={cover} alt="Cover Preview" className="w-full h-full object-cover" />
+                <button
+                  type="button"
+                  onClick={() => setCover('')}
+                  className="absolute top-1 right-1 p-1 bg-black/60 text-white rounded-full text-xs"
+                  title="移除封面"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            )}
+            <div className="flex gap-1.5 items-center">
+              <label className="px-3 py-1.5 bg-[#E2EAD8] hover:bg-[#C5D5B5] text-[#3B523A] font-bold rounded-lg cursor-pointer text-xs flex items-center gap-1 transition-all">
+                <Upload className="w-3.5 h-3.5" />
+                <span>選擇照片</span>
+                <input type="file" accept="image/*" onChange={handleFileChange} className="hidden" />
+              </label>
+              <input
+                type="url"
+                value={cover}
+                onChange={(e) => setCover(e.target.value)}
+                placeholder="或貼上圖片 URL 網址..."
+                className="flex-1 px-2.5 py-1.5 text-xs border border-[#F1E9DB] rounded-lg focus:outline-none"
               />
             </div>
           </div>

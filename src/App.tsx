@@ -11,6 +11,7 @@ import { PlanningView } from './components/PlanningView';
 import { MembersView } from './components/MembersView';
 import { AiAssistantView } from './components/AiAssistantView';
 import { AddItemModal, AddGourmetModal, AddShoppingModal, ExchangeModal, EditTripModal, EditDayModal } from './components/Modals';
+import { TripCoverBanner } from './components/TripCoverBanner';
 import { FirebaseSyncModal } from './components/FirebaseSyncModal';
 import { subscribeToTrip, saveTripToCloud, ensureAuth } from './lib/firebase';
 import { motion, AnimatePresence } from 'motion/react';
@@ -148,12 +149,20 @@ export default function App() {
   };
 
   /* Trip & Day Handlers */
-  const handleSaveTripDetails = (title: string, start: string, end: string) => {
+  const handleSaveTripDetails = (title: string, start: string, end: string, coverImage?: string) => {
     setData((prev) => ({
       ...prev,
       tripTitle: title,
       startDate: start,
       endDate: end,
+      coverImage: coverImage !== undefined ? coverImage : prev.coverImage,
+    }));
+  };
+
+  const handleUpdateCoverImage = (newImage: string) => {
+    setData((prev) => ({
+      ...prev,
+      coverImage: newImage,
     }));
   };
 
@@ -464,6 +473,15 @@ export default function App() {
 
         {/* Main Content View Container */}
         <main className="p-3 sm:p-4">
+          <TripCoverBanner
+            coverImage={data.coverImage}
+            tripTitle={data.tripTitle}
+            startDate={data.startDate}
+            endDate={data.endDate}
+            onOpenEditTripModal={() => setIsEditTripOpen(true)}
+            onUpdateCoverImage={handleUpdateCoverImage}
+          />
+
           <AnimatePresence mode="wait">
             {activeTab === 'itinerary' && (
               <motion.div
@@ -631,6 +649,7 @@ export default function App() {
           tripTitle={data.tripTitle}
           startDate={data.startDate}
           endDate={data.endDate}
+          coverImage={data.coverImage}
           onSave={handleSaveTripDetails}
         />
 
