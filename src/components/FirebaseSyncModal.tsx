@@ -136,6 +136,18 @@ export const FirebaseSyncModal: React.FC<FirebaseSyncModalProps> = ({
             </ol>
           </div>
 
+          {/* PWA Mobile App Installation Guide */}
+          <div className="bg-[#FFF9F2] p-3.5 rounded-xl border border-[#F1E9DB] space-y-2">
+            <div className="flex items-center gap-1.5 text-xs font-bold text-[#7A621E]">
+              <QrCode className="w-4 h-4 text-[#D49E24]" />
+              <span>📲 如何加到手機主畫面變成獨立 App？</span>
+            </div>
+            <div className="text-[11px] text-stone-700 space-y-1.5">
+              <p><strong>iOS iPhone (Safari 瀏覽器)</strong>：開啟網頁後，點選下方選單列的「分享按鈕 ➔ 加到主畫面」，即可獲得桌面 App 圖示！</p>
+              <p><strong>Android 手機 (Chrome 瀏覽器)</strong>：點選右上角選單「⋮ ➔ 安裝應用程式」或「加到主螢幕」即可全螢幕使用。</p>
+            </div>
+          </div>
+
           {/* Share Actions */}
           <div className="space-y-2">
             <label className="block text-xs font-bold text-stone-700">邀請旅伴加入此行程</label>
