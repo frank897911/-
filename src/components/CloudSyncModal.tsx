@@ -1,8 +1,8 @@
-import React, { useState } from 'react';
-import { Share2, Copy, Check, Download, Upload, QrCode, Sparkles, ShieldCheck, CheckCircle2, AlertCircle, MessageCircle, Link2, FileJson } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Share2, Copy, Check, Download, Upload, QrCode, Sparkles, ShieldCheck, CheckCircle2, AlertCircle, MessageCircle, Link2, FileJson, RefreshCw, Scissors } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { TravelAppData } from '../types';
-import { generateShareableUrl } from '../lib/shareUrl';
+import { generateShareableUrl, shortenUrl } from '../lib/shareUrl';
 import { exportLocalJson, importLocalJson } from '../lib/googleDrive';
 
 interface CloudSyncModalProps {
@@ -22,6 +22,7 @@ export const CloudSyncModal: React.FC<CloudSyncModalProps> = ({
 
   // Share States
   const [shareUrl, setShareUrl] = useState<string>('');
+  const [isShortening, setIsShortening] = useState<boolean>(false);
   const [copiedLink, setCopiedLink] = useState(false);
   const [showQrCode, setShowQrCode] = useState(false);
 
@@ -29,15 +30,30 @@ export const CloudSyncModal: React.FC<CloudSyncModalProps> = ({
   const [fileImportError, setFileImportError] = useState<string | null>(null);
   const [fileImportSuccess, setFileImportSuccess] = useState<boolean>(false);
 
-  const handleGenerateShareUrl = () => {
-    const url = generateShareableUrl(data);
-    setShareUrl(url);
-    setShowQrCode(true);
+  // Auto-generate shortened URL on modal open
+  useEffect(() => {
+    if (isOpen && activeTab === 'share') {
+      handleGenerateShareUrl();
+    }
+  }, [isOpen, activeTab]);
+
+  const handleGenerateShareUrl = async () => {
+    setIsShortening(true);
+    const longUrl = generateShareableUrl(data);
+    setShareUrl(longUrl); // set long URL immediately as fallback
+
+    try {
+      const short = await shortenUrl(longUrl);
+      setShareUrl(short);
+    } catch (e) {
+      console.warn('Auto shorten URL error:', e);
+    } finally {
+      setIsShortening(false);
+    }
   };
 
   const handleCopyLink = () => {
     const urlToCopy = shareUrl || generateShareableUrl(data);
-    if (!shareUrl) setShareUrl(urlToCopy);
 
     navigator.clipboard.writeText(urlToCopy);
     setCopiedLink(true);
@@ -46,7 +62,6 @@ export const CloudSyncModal: React.FC<CloudSyncModalProps> = ({
 
   const handleLineShare = () => {
     const urlToShare = shareUrl || generateShareableUrl(data);
-    if (!shareUrl) setShareUrl(urlToShare);
 
     const message = `🇯🇵 我更新了我們的旅遊行程「${data.tripTitle || '日本旅遊'}」！點擊連結即可直接開啓最新行程：\n${urlToShare}`;
     const lineUrl = `https://line.me/R/msg/text/?${encodeURIComponent(message)}`;
@@ -55,7 +70,6 @@ export const CloudSyncModal: React.FC<CloudSyncModalProps> = ({
 
   const handleNativeShare = async () => {
     const urlToShare = shareUrl || generateShareableUrl(data);
-    if (!shareUrl) setShareUrl(urlToShare);
 
     if (navigator.share) {
       try {
@@ -177,25 +191,37 @@ export const CloudSyncModal: React.FC<CloudSyncModalProps> = ({
               <div className="p-4 bg-[#FFF9F2] rounded-xl border border-[#F1E9DB] space-y-3">
                 <button
                   onClick={handleGenerateShareUrl}
-                  className="w-full py-3 px-4 bg-[#3B523A] hover:bg-[#2C3E2B] text-white font-bold text-xs rounded-xl shadow-xs transition-all active:scale-95 flex items-center justify-center gap-2"
+                  disabled={isShortening}
+                  className="w-full py-3 px-4 bg-[#3B523A] hover:bg-[#2C3E2B] text-white font-bold text-xs rounded-xl shadow-xs transition-all active:scale-95 flex items-center justify-center gap-2 disabled:opacity-75"
                 >
-                  <Share2 className="w-4 h-4" />
-                  <span>儲存當前修改並產生專屬分享連結</span>
+                  {isShortening ? (
+                    <>
+                      <RefreshCw className="w-4 h-4 animate-spin text-emerald-300" />
+                      <span>正在自動壓縮與縮短網址...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Scissors className="w-4 h-4 text-emerald-300" />
+                      <span>儲存當前修改並重新產生短網址</span>
+                    </>
+                  )}
                 </button>
 
                 {/* Share Actions Grid */}
                 <div className="grid grid-cols-3 gap-2 pt-1">
                   <button
                     onClick={handleCopyLink}
-                    className="flex flex-col items-center justify-center p-2.5 bg-white hover:bg-[#F8FAF6] border border-[#C5D5B5] rounded-xl text-[#3B523A] transition-all active:scale-95 space-y-1"
+                    disabled={isShortening}
+                    className="flex flex-col items-center justify-center p-2.5 bg-white hover:bg-[#F8FAF6] border border-[#C5D5B5] rounded-xl text-[#3B523A] transition-all active:scale-95 space-y-1 disabled:opacity-50"
                   >
                     {copiedLink ? <Check className="w-4 h-4 text-emerald-600" /> : <Copy className="w-4 h-4 text-[#2B7A82]" />}
-                    <span className="text-[11px] font-bold">{copiedLink ? '已複製！' : '複製連結'}</span>
+                    <span className="text-[11px] font-bold">{copiedLink ? '已複製短網址！' : '複製短網址'}</span>
                   </button>
 
                   <button
                     onClick={handleLineShare}
-                    className="flex flex-col items-center justify-center p-2.5 bg-[#06C755] hover:bg-[#05b34c] text-white rounded-xl transition-all active:scale-95 space-y-1"
+                    disabled={isShortening}
+                    className="flex flex-col items-center justify-center p-2.5 bg-[#06C755] hover:bg-[#05b34c] text-white rounded-xl transition-all active:scale-95 space-y-1 disabled:opacity-50"
                   >
                     <MessageCircle className="w-4 h-4" />
                     <span className="text-[11px] font-bold">LINE 傳送</span>
@@ -203,7 +229,8 @@ export const CloudSyncModal: React.FC<CloudSyncModalProps> = ({
 
                   <button
                     onClick={handleNativeShare}
-                    className="flex flex-col items-center justify-center p-2.5 bg-[#2B7A82] hover:bg-[#226369] text-white rounded-xl transition-all active:scale-95 space-y-1"
+                    disabled={isShortening}
+                    className="flex flex-col items-center justify-center p-2.5 bg-[#2B7A82] hover:bg-[#226369] text-white rounded-xl transition-all active:scale-95 space-y-1 disabled:opacity-50"
                   >
                     <Share2 className="w-4 h-4" />
                     <span className="text-[11px] font-bold">手機分享</span>
@@ -212,17 +239,27 @@ export const CloudSyncModal: React.FC<CloudSyncModalProps> = ({
 
                 {/* Display Current Link Field */}
                 <div className="space-y-1.5 pt-1 border-t border-[#F1E9DB]">
-                  <label className="block text-[11px] font-bold text-stone-600">專屬行程連結 (含有完整行程內容)：</label>
+                  <div className="flex items-center justify-between">
+                    <label className="block text-[11px] font-bold text-stone-600 flex items-center gap-1">
+                      <Scissors className="w-3.5 h-3.5 text-[#2B7A82]" />
+                      <span>精簡極短分享連結 (可直接點擊複製)：</span>
+                    </label>
+                    {isShortening && (
+                      <span className="text-[10px] text-[#2B7A82] font-bold animate-pulse">
+                        縮網址處理中...
+                      </span>
+                    )}
+                  </div>
                   <div className="flex gap-2">
                     <input
                       type="text"
                       readOnly
                       value={activeUrl}
-                      className="flex-1 px-3 py-1.5 text-xs bg-white border border-stone-300 rounded-xl font-mono text-stone-600 select-all focus:outline-none"
+                      className="flex-1 px-3 py-1.5 text-xs bg-white border border-stone-300 rounded-xl font-mono text-[#2B7A82] font-bold select-all focus:outline-none"
                     />
                     <button
                       onClick={handleCopyLink}
-                      className="px-3 py-1.5 bg-[#3B523A] text-white text-xs font-bold rounded-xl hover:bg-[#2C3E2B] transition-colors"
+                      className="px-3.5 py-1.5 bg-[#3B523A] text-white text-xs font-bold rounded-xl hover:bg-[#2C3E2B] transition-colors flex-shrink-0"
                     >
                       {copiedLink ? '已複製' : '複製'}
                     </button>

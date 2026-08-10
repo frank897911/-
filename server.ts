@@ -14,6 +14,66 @@ async function startServer() {
     res.json({ status: "ok", app: "Piske & Usagi Japan Travel Journal" });
   });
 
+  // Short URL storage in memory
+  const shortLinksMap = new Map<string, string>();
+
+  // Shorten URL endpoint
+  app.post("/api/shorten", async (req, res) => {
+    try {
+      const { url } = req.body;
+      if (!url) {
+        return res.status(400).json({ error: "Missing URL" });
+      }
+
+      // Try TinyURL API
+      try {
+        const tinyRes = await fetch(`https://tinyurl.com/api-create.php?url=${encodeURIComponent(url)}`);
+        if (tinyRes.ok) {
+          const shortUrl = await tinyRes.text();
+          if (shortUrl && shortUrl.startsWith("http")) {
+            return res.json({ shortUrl: shortUrl.trim() });
+          }
+        }
+      } catch (e) {
+        console.warn("TinyURL request failed, using fallback shortener:", e);
+      }
+
+      // Try is.gd API
+      try {
+        const isgdRes = await fetch(`https://is.gd/create.php?format=json&url=${encodeURIComponent(url)}`);
+        if (isgdRes.ok) {
+          const data = (await isgdRes.json()) as any;
+          if (data && data.shorturl) {
+            return res.json({ shortUrl: data.shorturl });
+          }
+        }
+      } catch (e) {
+        console.warn("is.gd request failed:", e);
+      }
+
+      // Internal fallback short link
+      const id = Math.random().toString(36).substring(2, 8);
+      shortLinksMap.set(id, url);
+      const host = req.get("host") || "localhost:3000";
+      const protocol = req.protocol || "https";
+      const internalShortUrl = `${protocol}://${host}/s/${id}`;
+      return res.json({ shortUrl: internalShortUrl });
+    } catch (err: any) {
+      console.error("Shorten error:", err);
+      return res.status(500).json({ error: "Failed to shorten URL" });
+    }
+  });
+
+  // Short link redirect endpoint
+  app.get("/s/:id", (req, res) => {
+    const id = req.params.id;
+    const targetUrl = shortLinksMap.get(id);
+    if (targetUrl) {
+      return res.redirect(targetUrl);
+    }
+    return res.redirect("/");
+  });
+
   // AI Assistant endpoint using Gemini
   app.post("/api/ai-travel-assistant", async (req, res) => {
     try {

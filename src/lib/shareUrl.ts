@@ -54,6 +54,28 @@ export function parseShareableUrl(): TravelAppData | null {
 }
 
 /**
+ * Shorten a long URL via backend /api/shorten
+ */
+export async function shortenUrl(longUrl: string): Promise<string> {
+  try {
+    const res = await fetch('/api/shorten', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ url: longUrl }),
+    });
+    if (res.ok) {
+      const data = await res.json();
+      if (data && data.shortUrl) {
+        return data.shortUrl;
+      }
+    }
+  } catch (err) {
+    console.warn('Failed to call shorten API:', err);
+  }
+  return longUrl;
+}
+
+/**
  * Clear share hash from current URL without reloading page
  */
 export function clearShareUrlHash() {
